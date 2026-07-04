@@ -28,7 +28,7 @@ axum-extra = { version = "0.10", features = ["cookie"] }
 rand = "0.8"
 time = "0.3"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tower_governor = "0.8"
 dotenvy = "0.15"
 
