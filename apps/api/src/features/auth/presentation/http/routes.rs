@@ -12,13 +12,13 @@ use crate::bootstrap::AppState;
 use crate::features::auth::application::commands::sign_in::SignInHandler;
 use crate::features::auth::application::commands::sign_out::SignOutHandler;
 use crate::features::auth::application::commands::sign_up::SignUpHandler;
-use crate::features::auth::application::dtos::SignOutInput;
+use crate::features::auth::application::dtos::{GetCurrentUserInput, SignOutInput};
+use crate::features::auth::application::queries::current_user::GetCurrentUserHandler;
 use crate::features::auth::presentation::http::dtos::{
     SessionResponse, SignInRequest, SignUpRequest, UserResponse,
 };
 use crate::shared::kernel::error::AppError;
 
-use super::middleware::AuthUser;
 use super::mappers::AuthMapper;
 
 const SESSION_COOKIE: &str = "session";
@@ -119,8 +119,26 @@ async fn sign_out(
     Ok((StatusCode::NO_CONTENT, jar))
 }
 
-async fn session(AuthUser(user, sess): AuthUser) -> Result<Json<SessionResponse>, AppError> {
-    Ok(Json(AuthMapper::to_session_response(user, sess)))
+async fn session(
+    State(state): State<AppState>,
+    jar: CookieJar,
+) -> Result<Json<Option<SessionResponse>>, AppError> {
+    let Some(cookie) = jar.get(SESSION_COOKIE) else {
+        return Ok(Json(None));
+    };
+
+    let handler = GetCurrentUserHandler::new(state.auth_deps());
+    let result = handler
+        .handle(GetCurrentUserInput {
+            token: cookie.value().to_string(),
+        })
+        .await;
+
+    match result {
+        Ok(r) => Ok(Json(Some(AuthMapper::to_session_response(r.user, r.session)))),
+        // Expired / invalid / not-found → null, not 401
+        Err(_) => Ok(Json(None)),
+    }
 }
 
 fn build_cookie(token: &str, secure: bool) -> axum_extra::extract::cookie::Cookie<'static> {
