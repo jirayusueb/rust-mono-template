@@ -1,132 +1,154 @@
-# apps/api — Coding Standard & Consistency Pass
+# Refactor All Mappers to Gist Pattern
 
 ## Context
 
-The API follows vertical-slice / clean-architecture / CQRS with three features: **todo** (the original reference), **auth**, and **user**. As auth and user were added after todo, conventions drifted. This plan normalizes all three features to a single consistent standard, fixes 35 `cargo fmt` failures and 15 `cargo clippy` warnings, and cleans up minor hygiene issues.
+The gist ([RezaOwliaei/elysia-clean-architecture-guide](https://gist.github.com/RezaOwliaei/477ed74fc77aa5df2a854789538dd79d)) prescribes mappers as a dedicated type with directional mapping methods, at both layers:
 
-**Direction**: auth and user (the newer, majority 2/3 features) define the established convention. Todo (the outlier) is normalized to match.
+- **Infrastructure Data Mappers**: `toDomain` / `toPersistence` — DB row ↔ domain entity, using the Rehydration Pattern (`restore()` not `create()`).
+- **Presentation Mappers**: Transport DTO ↔ use-case DTO / domain port types.
 
----
+Current state already follows rehydration (`restore()` in all infra mappers ✅). What's missing:
 
-## Issues Found
-
-### A. `cargo fmt` — 35 files unformatted
-
-Run `cargo fmt`. No manual decisions needed.
-
-### B. `cargo clippy` — 15 warnings (2 root causes)
-
-| File                                                                           | Warning                                   | Fix                                                                        |
-| ------------------------------------------------------------------------------ | ----------------------------------------- | -------------------------------------------------------------------------- |
-| `shared/infrastructure/database/tx.rs:71` (in `with_conn!` macro, expands 13×) | `matching on Some with ok() is redundant` | `if let Some(slot) = ...try_get().ok()` → `if let Ok(slot) = ...try_get()` |
-| `auth/infrastructure/repositories/postgres_auth_repository.rs:120,124`         | `useless conversion to same type`         | Remove `.into()` after `Expr::value(...)` (already returns `SimpleExpr`)   |
-
-### C. Error enum naming inconsistency
-
-| Feature  | Domain error         | Infra error         |
-| -------- | -------------------- | ------------------- |
-| **todo** | `DomainError` ❌     | `InfraError` ❌     |
-| **auth** | `AuthDomainError` ✅ | `AuthInfraError` ✅ |
-| **user** | `UserDomainError` ✅ | `UserInfraError` ✅ |
-
-**Fix**: Rename todo's `DomainError` → `TodoDomainError`, `InfraError` → `TodoInfraError`. Update all references.
-
-### D. Module encapsulation inconsistency (todo leaks internals)
-
-| Module                               | todo                                               | auth/user                              |
-| ------------------------------------ | -------------------------------------------------- | -------------------------------------- |
-| `domain/mod.rs`                      | `pub mod entities; pub mod error; pub mod values;` | `mod entities; mod error; mod values;` |
-| `infrastructure/repositories/mod.rs` | `pub mod postgres_todo_repository;`                | `mod postgres_*_repository;`           |
-
-**Fix**: Change todo's `pub mod` → `mod` in these two files. The `pub use` re-exports already expose the public API.
-
-### E. Missing derives on domain entities
-
-| Entity    | Derives                      |
-| --------- | ---------------------------- |
-| `Todo`    | `Debug, Clone, Serialize` ✅ |
-| `User`    | `Debug, Clone, Serialize` ✅ |
-| `Account` | _(none)_ ❌                  |
-| `Session` | _(none)_ ❌                  |
-
-**Fix**: Add `#[derive(Debug, Clone)]` to `Account` and `Session`.
-
-### F. Missing mock attribute on UserRepository port
-
-Every port has `#[cfg_attr(test, mockall::automock)]` **except** `UserRepository`. Add it.
-
-### G. Import hygiene
-
-| File                                  | Issue                                                              | Fix                                  |
-| ------------------------------------- | ------------------------------------------------------------------ | ------------------------------------ |
-| `auth/application/ports/user_port.rs` | Inline `chrono::DateTime<chrono::Utc>`                             | Add `use chrono::{DateTime, Utc};`   |
-| `auth/application/dtos/mod.rs`        | `use` statement at bottom of file                                  | Move to top                          |
-| `postgres_todo_repository.rs`         | `use sea_orm::*;` wildcard before specific imports from same crate | Replace with explicit imports        |
-| `todo/domain/values/todo_id.rs`       | `impl std::default::Default` fully-qualified                       | Import `Default`, use `impl Default` |
-
-### H. Unnecessary boilerplate
-
-`AuthDeps` has a manual `Clone` impl (all fields are `Arc`, trivially cloneable). Replace with `#[derive(Clone)]`.
-
-### I. Redundant re-export (minor)
-
-`auth/domain/values/mod.rs` re-exports `AccountId` and `Password`, but `auth/domain/mod.rs` already does the same re-export. Remove from `values/mod.rs` to match todo/user which don't double-export.
-
----
+1. **No `to_persistence`** in infra mappers — repos inline `ActiveModel` construction.
+2. **Free functions** instead of named `Mapper` types (gist uses `UserMapper.toDomain()`).
+3. **Presentation mappers use `impl From<>`** — gist prescribes a dedicated `Mapper` struct that maps transport DTO ↔ use-case DTO / domain port types.
+4. **Presentation DTOs are monolithic `mod.rs`** — gist prescribes one file per DTO.
 
 ## Approach
 
-Batch into three passes:
+### A. Infrastructure mappers
 
-1. **Mechanical**: `cargo fmt` + `cargo clippy --fix` (warnings B, A)
-2. **Naming & visibility**: Rename error enums (C), fix module visibility (D), remove redundant re-export (I)
-3. **Hygiene & derives**: Add derives (E), add mock (F), fix imports (G), derive Clone (H)
+Convert each infra mapper from free functions → `Mapper` struct with `to_domain` + `to_active_model`. Extract inline `ActiveModel` construction from repos into the mapper.
+
+Query logic stays in repos — only mapping moves:
+
+- `on_conflict` upsert logic (Todo, User repos)
+- `update_session_expiry` column-expr update (Auth repo)
+- `delete` soft-delete queries
+
+### B. Presentation mappers
+
+Convert `impl From<>` → dedicated `Mapper` struct with associated functions. Routes call `AuthMapper::to_sign_up_command(req)` etc. instead of `UserResponse::from(user)`.
+
+**Auth** (`AuthMapper`):
+
+- `to_sign_up_command(SignUpRequest) -> SignUpCommand`
+- `to_sign_in_command(SignInRequest, ip, user_agent) -> SignInCommand`
+- `to_user_response(AuthUserInfo) -> UserResponse`
+- `to_session_details(SessionInfo) -> SessionDetails`
+- `to_session_response(AuthUserInfo, SessionInfo) -> SessionResponse`
+
+**Todo** (`TodoMapper`):
+
+- `to_create_command(CreateTodoRequest, UserId) -> Result<CreateTodoCommand, AppError>`
+- `to_update_command(UpdateTodoRequest, UserId, TodoId) -> Result<UpdateTodoCommand, AppError>`
+- `to_todo_response(Todo) -> TodoResponse`
+- `to_create_response(TodoId) -> CreateTodoResponse`
+
+Note: `Title::new` (value-object validation) stays in the mapper — it's input shaping, and the command struct requires a `Title` not a raw `String`.
+
+### C. Presentation DTOs → multi-file
+
+Split `dtos/mod.rs` into one file per DTO, matching the gist structure:
+
+```
+auth/presentation/http/dtos/
+  mod.rs                    (re-exports)
+  sign_up_request.rs
+  sign_in_request.rs
+  user_response.rs
+  session_details.rs        (was SessionResponse — inner session metadata)
+  session_response.rs       (was SessionPayload — full GET /session wrapper)
+
+todo/presentation/http/dtos/
+  mod.rs                    (re-exports)
+  create_todo_request.rs
+  update_todo_request.rs
+  todo_response.rs
+  create_todo_response.rs
+```
+
+**Naming fix**: `SessionPayload` → `SessionResponse` (it's the `GET /auth/session` response), and inner `SessionResponse` → `SessionDetails` (session metadata). This aligns all DTOs on `*Request` / `*Response`. The web client (`apps/web/src/lib/api.ts`, `auth-client.tsx`) mirrors the type and gets the same rename.
 
 ## Files to modify
 
-```
-src/features/todo/domain/error.rs                          — rename DomainError → TodoDomainError
-src/features/todo/domain/mod.rs                            — rename re-export, pub mod → mod
-src/features/todo/domain/entities/todo.rs                  — update import path
-src/features/todo/domain/values/{title,status}.rs          — update import path
-src/features/todo/infrastructure/error.rs                  — rename InfraError → TodoInfraError
-src/features/todo/infrastructure/mod.rs                    — rename re-export
-src/features/todo/infrastructure/repositories/mod.rs       — pub mod → mod
-src/features/todo/infrastructure/repositories/postgres_todo_repository.rs — fix imports, update error ref
-src/features/todo/infrastructure/mapper/todo_mapper.rs     — update error ref
-src/features/auth/domain/entities/{account,session}.rs     — add derives
-src/features/auth/domain/values/mod.rs                     — remove redundant re-export
-src/features/auth/application/dtos/mod.rs                  — move import to top
-src/features/auth/application/ports/user_port.rs           — fix chrono import
-src/features/auth/infrastructure/repositories/postgres_auth_repository.rs — remove .into()
-src/features/user/application/ports/user_repository.rs     — add automock attr
-src/shared/infrastructure/database/tx.rs                   — fix clippy in with_conn! macro
-src/bootstrap/mod.rs                                       — derive Clone on AuthDeps (move from dtos)
-src/features/auth/application/dtos/mod.rs                  — derive Clone on AuthDeps
-+ cargo fmt on all 35 files
-```
+### Infrastructure mappers + repos
+
+| File                                                           | Change                     |
+| -------------------------------------------------------------- | -------------------------- |
+| `auth/infrastructure/mappers/account_mapper.rs`                | Struct + `to_active_model` |
+| `auth/infrastructure/mappers/session_mapper.rs`                | Struct + `to_active_model` |
+| `auth/infrastructure/mappers/mod.rs`                           | Re-export structs          |
+| `auth/infrastructure/repositories/postgres_auth_repository.rs` | Delegate saves to mappers  |
+| `todo/infrastructure/mappers/todo_mapper.rs`                   | Struct + `to_active_model` |
+| `todo/infrastructure/mappers/mod.rs`                           | Re-export struct           |
+| `todo/infrastructure/repositories/postgres_todo_repository.rs` | Delegate saves to mapper   |
+| `user/infrastructure/mappers/user_mapper.rs`                   | Struct + `to_active_model` |
+| `user/infrastructure/mappers/mod.rs`                           | Re-export struct           |
+| `user/infrastructure/repositories/postgres_user_repository.rs` | Delegate saves to mapper   |
+
+### Presentation mappers
+
+| File                                    | Change                                                       |
+| --------------------------------------- | ------------------------------------------------------------ |
+| `auth/presentation/http/mappers/mod.rs` | `struct AuthMapper` with associated fns                      |
+| `todo/presentation/http/mappers/mod.rs` | `struct TodoMapper` with associated fns                      |
+| `auth/presentation/http/routes.rs`      | Call `AuthMapper::` instead of `From::from`                  |
+| `todo/presentation/http/routes.rs`      | Call `TodoMapper::` instead of `From::from` + inline mapping |
+
+### Presentation DTOs → multi-file
+
+| File                                                  | Change                                  |
+| ----------------------------------------------------- | --------------------------------------- |
+| `auth/presentation/http/dtos/mod.rs`                  | Split into per-DTO files, re-export     |
+| `auth/presentation/http/dtos/sign_up_request.rs`      | New — extracted                         |
+| `auth/presentation/http/dtos/sign_in_request.rs`      | New — extracted                         |
+| `auth/presentation/http/dtos/user_response.rs`        | New — extracted                         |
+| `auth/presentation/http/dtos/session_details.rs`      | New — extracted (was `SessionResponse`) |
+| `auth/presentation/http/dtos/session_response.rs`     | New — extracted (was `SessionPayload`)  |
+| `todo/presentation/http/dtos/mod.rs`                  | Split into per-DTO files, re-export     |
+| `todo/presentation/http/dtos/create_todo_request.rs`  | New — extracted                         |
+| `todo/presentation/http/dtos/update_todo_request.rs`  | New — extracted                         |
+| `todo/presentation/http/dtos/todo_response.rs`        | New — extracted                         |
+| `todo/presentation/http/dtos/create_todo_response.rs` | New — extracted                         |
+
+## Reuse
+
+- `Entity::restore()` factories — already exist on all entities (added in prior commit)
 
 ## Steps
 
-- [ ] 1. Run `cargo fmt` (fixes A — 35 files)
-- [ ] 2. Fix `with_conn!` macro clippy warning in `tx.rs` (B)
-- [ ] 3. Remove redundant `.into()` in `postgres_auth_repository.rs` (B)
-- [ ] 4. Rename `DomainError` → `TodoDomainError` across todo feature (C)
-- [ ] 5. Rename `InfraError` → `TodoInfraError` across todo feature (C)
-- [ ] 6. Change todo `domain/mod.rs` and `repositories/mod.rs` to private mods (D)
-- [ ] 7. Add `#[derive(Debug, Clone)]` to `Account` and `Session` (E)
-- [ ] 8. Add `#[cfg_attr(test, mockall::automock)]` to `UserRepository` (F)
-- [ ] 9. Fix import hygiene: chrono in user_port, dtos import position, sea_orm wildcard, TodoId Default (G)
-- [ ] 10. Replace manual `Clone` impl with `#[derive(Clone)]` on `AuthDeps` (H)
-- [ ] 11. Remove redundant re-exports from `auth/domain/values/mod.rs` (I)
-- [ ] 12. Run `cargo fmt && cargo clippy && cargo test` to verify zero warnings/errors
+### Infrastructure
+
+- [ ] 1. `account_mapper.rs` → `struct AccountMapper { to_domain, to_active_model }`
+- [ ] 2. `session_mapper.rs` → `struct SessionMapper { to_domain, to_active_model }`
+- [ ] 3. `todo_mapper.rs` → `struct TodoMapper { to_domain, to_active_model }`
+- [ ] 4. `user_mapper.rs` → `struct UserMapper { to_domain, to_active_model }`
+- [ ] 5. Update infra `mod.rs` files to re-export structs
+- [ ] 6. Update 3 postgres repositories — delegate save mapping to mappers
+
+### Presentation DTOs
+
+- [ ] 7. Split auth `dtos/mod.rs` → 5 per-DTO files + re-export `mod.rs`
+- [ ] 8. Split todo `dtos/mod.rs` → 4 per-DTO files + re-export `mod.rs`
+
+### Presentation mappers
+
+- [ ] 9. `auth/presentation/http/mappers/mod.rs` → `struct AuthMapper`
+- [ ] 10. `todo/presentation/http/mappers/mod.rs` → `struct TodoMapper`
+- [ ] 11. Update `auth/routes.rs` — call `AuthMapper::` methods
+- [ ] 12. Update `todo/routes.rs` — call `TodoMapper::` methods
+
+- [ ] 13. Rename `SessionPayload` → `SessionResponse`, inner `SessionResponse` → `SessionDetails` across API + web
+
+### Verify
+
+- [ ] 14. `cargo check` + `cargo test`
+- [ ] 15. `cd apps/web && npx tsc --noEmit`
 
 ## Verification
 
-```bash
-cd apps/api
-cargo fmt --check        # must report no diffs
-cargo clippy --all-targets  # must report zero warnings
-cargo test               # all tests pass
-cargo build              # clean build
+```sh
+cd apps/api && cargo check    # compiles
+cd apps/api && cargo test     # all tests pass
 ```

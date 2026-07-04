@@ -1,6 +1,7 @@
 use chrono::Utc;
 
-use crate::features::auth::application::dtos::{AuthDeps, GetCurrentUserQuery};
+use crate::features::auth::application::deps::AuthDeps;
+use crate::features::auth::application::dtos::GetCurrentUserQuery;
 use crate::features::auth::application::ports::session_info::SessionInfo;
 use crate::features::auth::application::ports::user_port::AuthUserInfo;
 use crate::shared::kernel::error::AppError;
@@ -56,7 +57,7 @@ impl GetCurrentUserHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::features::auth::application::dtos::AuthDeps;
+    use crate::features::auth::application::deps::AuthDeps;
     use crate::features::auth::application::ports::auth_repository::MockAuthRepository;
     use crate::features::auth::application::ports::user_port::{AuthUserInfo, MockUserPort};
     use crate::features::auth::domain::Session;

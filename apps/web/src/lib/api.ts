@@ -42,7 +42,7 @@ export type Session = {
   created_at: string;
 };
 
-export type SessionPayload = { user: User; session: Session };
+export type SessionResponse = { user: User; session: Session };
 
 export type ApiError = { error: { code: string; message: string } };
 

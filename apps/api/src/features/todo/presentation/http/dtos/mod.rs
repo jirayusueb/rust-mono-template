@@ -1,37 +1,9 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use validator::Validate;
+pub mod create_todo_request;
+pub mod create_todo_response;
+pub mod todo_response;
+pub mod update_todo_request;
 
-use crate::features::todo::domain::Status;
-
-// --- Request DTOs ---
-
-#[derive(Debug, Deserialize, Validate)]
-pub struct CreateTodoRequest {
-    #[validate(length(min = 1, max = 200))]
-    pub title: String,
-}
-
-#[derive(Debug, Deserialize, Validate)]
-pub struct UpdateTodoRequest {
-    #[validate(length(min = 1, max = 200))]
-    pub title: Option<String>,
-    // status is an enum — serde rejects bad values before validator runs
-    pub status: Option<Status>,
-}
-
-// --- Response DTOs ---
-
-#[derive(Debug, Serialize)]
-pub struct TodoResponse {
-    pub id: String,
-    pub title: String,
-    pub status: Status,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct CreateTodoResponse {
-    pub id: String,
-}
+pub use create_todo_request::CreateTodoRequest;
+pub use create_todo_response::CreateTodoResponse;
+pub use todo_response::TodoResponse;
+pub use update_todo_request::UpdateTodoRequest;

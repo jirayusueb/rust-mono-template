@@ -1,4 +1,6 @@
-use crate::features::auth::application::dtos::{AuthDeps, AuthResult, SignInCommand};
+use crate::features::auth::application::deps::AuthDeps;
+use crate::features::auth::application::dtos::SignInCommand;
+use crate::features::auth::application::result::AuthResult;
 use crate::features::auth::domain::Session;
 use crate::shared::kernel::error::AppError;
 

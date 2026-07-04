@@ -3,7 +3,7 @@ use sea_orm::*;
 use crate::features::user::application::ports::user_repository::UserRepository;
 use crate::features::user::domain::{Email, User};
 use crate::features::user::infrastructure::error::UserInfraError;
-use crate::features::user::infrastructure::mappers::user_mapper::to_domain;
+use crate::features::user::infrastructure::mappers::UserMapper;
 use crate::features::user::infrastructure::schema::user::*;
 use crate::shared::infrastructure::database::DbPool;
 use crate::shared::kernel::error::AppError;
@@ -24,15 +24,7 @@ impl PostgresUserRepository {
 #[async_trait::async_trait]
 impl UserRepository for PostgresUserRepository {
     async fn save(&self, user: &User) -> Result<(), AppError> {
-        let active = ActiveModel {
-            id: Set(user.id.into()),
-            email: Set(user.email.as_str().to_string()),
-            email_verified: Set(user.email_verified),
-            name: Set(user.name.clone()),
-            image: Set(user.image.clone()),
-            created_at: Set(user.created_at),
-            updated_at: Set(user.updated_at),
-        };
+        let active = UserMapper::to_active_model(user);
         let stmt = Entity::insert(active).on_conflict(
             sea_query::OnConflict::column(Column::Id)
                 .update_columns([
@@ -59,7 +51,9 @@ impl UserRepository for PostgresUserRepository {
                 .one(&conn)
                 .await
                 .map_err(|e| AppError::from(UserInfraError::from(e)))?;
-            row.map(to_domain).transpose().map_err(AppError::from)
+            row.map(UserMapper::to_domain)
+                .transpose()
+                .map_err(AppError::from)
         })
     }
 
@@ -70,7 +64,9 @@ impl UserRepository for PostgresUserRepository {
                 .one(&conn)
                 .await
                 .map_err(|e| AppError::from(UserInfraError::from(e)))?;
-            row.map(to_domain).transpose().map_err(AppError::from)
+            row.map(UserMapper::to_domain)
+                .transpose()
+                .map_err(AppError::from)
         })
     }
 }

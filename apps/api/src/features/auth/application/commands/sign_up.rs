@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use crate::features::auth::application::dtos::{AuthDeps, AuthResult, SignUpCommand};
+use crate::features::auth::application::deps::AuthDeps;
+use crate::features::auth::application::dtos::SignUpCommand;
+use crate::features::auth::application::result::AuthResult;
 use crate::features::auth::domain::{Account, Password, Session};
 use crate::shared::kernel::error::AppError;
 
@@ -71,7 +73,7 @@ impl SignUpHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::features::auth::application::dtos::AuthDeps;
+    use crate::features::auth::application::deps::AuthDeps;
     use crate::features::auth::application::ports::auth_repository::MockAuthRepository;
     use crate::features::auth::application::ports::user_port::{AuthUserInfo, MockUserPort};
     use crate::shared::application::unit_of_work::NoopUnitOfWork;

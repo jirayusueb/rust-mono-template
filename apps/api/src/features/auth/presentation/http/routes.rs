@@ -12,13 +12,14 @@ use crate::bootstrap::AppState;
 use crate::features::auth::application::commands::sign_in::SignInHandler;
 use crate::features::auth::application::commands::sign_out::SignOutHandler;
 use crate::features::auth::application::commands::sign_up::SignUpHandler;
-use crate::features::auth::application::dtos::{SignInCommand, SignOutCommand, SignUpCommand};
+use crate::features::auth::application::dtos::SignOutCommand;
 use crate::features::auth::presentation::http::dtos::{
-    SessionPayload, SignInRequest, SignUpRequest, UserResponse,
+    SessionResponse, SignInRequest, SignUpRequest, UserResponse,
 };
 use crate::shared::kernel::error::AppError;
 
 use super::middleware::AuthUser;
+use super::mappers::AuthMapper;
 
 const SESSION_COOKIE: &str = "session";
 
@@ -52,18 +53,14 @@ async fn sign_up(
     req.validate()?;
     let handler = SignUpHandler::new(state.auth_deps());
     let result = handler
-        .handle(SignUpCommand {
-            email: req.email,
-            password: req.password,
-            name: req.name,
-        })
+        .handle(AuthMapper::to_sign_up_command(req))
         .await?;
 
     let jar = jar.add(build_cookie(&result.token, !state.is_dev));
     Ok((
         StatusCode::CREATED,
         jar,
-        Json(UserResponse::from(result.user)),
+        Json(AuthMapper::to_user_response(result.user)),
     ))
 }
 
@@ -89,16 +86,19 @@ async fn sign_in(
 
     let handler = SignInHandler::new(state.auth_deps());
     let result = handler
-        .handle(SignInCommand {
-            email: req.email,
-            password: req.password,
-            ip_address: Some(ip_address),
+        .handle(AuthMapper::to_sign_in_command(
+            req,
+            Some(ip_address),
             user_agent,
-        })
+        ))
         .await?;
 
     let jar = jar.add(build_cookie(&result.token, !state.is_dev));
-    Ok((StatusCode::OK, jar, Json(UserResponse::from(result.user))))
+    Ok((
+        StatusCode::OK,
+        jar,
+        Json(AuthMapper::to_user_response(result.user)),
+    ))
 }
 
 async fn sign_out(
@@ -119,11 +119,8 @@ async fn sign_out(
     Ok((StatusCode::NO_CONTENT, jar))
 }
 
-async fn session(AuthUser(user, sess): AuthUser) -> Result<Json<SessionPayload>, AppError> {
-    Ok(Json(SessionPayload {
-        user: UserResponse::from(user),
-        session: sess.into(),
-    }))
+async fn session(AuthUser(user, sess): AuthUser) -> Result<Json<SessionResponse>, AppError> {
+    Ok(Json(AuthMapper::to_session_response(user, sess)))
 }
 
 fn build_cookie(token: &str, secure: bool) -> axum_extra::extract::cookie::Cookie<'static> {

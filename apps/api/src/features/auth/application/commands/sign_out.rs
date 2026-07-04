@@ -1,4 +1,5 @@
-use crate::features::auth::application::dtos::{AuthDeps, SignOutCommand};
+use crate::features::auth::application::deps::AuthDeps;
+use crate::features::auth::application::dtos::SignOutCommand;
 use crate::shared::kernel::error::AppError;
 
 pub struct SignOutHandler {
@@ -18,7 +19,7 @@ impl SignOutHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::features::auth::application::dtos::AuthDeps;
+    use crate::features::auth::application::deps::AuthDeps;
     use crate::features::auth::application::ports::auth_repository::MockAuthRepository;
     use crate::features::auth::application::ports::user_port::MockUserPort;
     use crate::shared::application::unit_of_work::NoopUnitOfWork;

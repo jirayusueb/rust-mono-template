@@ -1,11 +1,11 @@
 use sea_orm::sea_query::{Expr, OnConflict};
-use sea_orm::{ActiveValue::Set, ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder};
+use sea_orm::{ColumnTrait, EntityTrait, Order, QueryFilter, QueryOrder};
 use uuid::Uuid;
 
 use crate::features::todo::application::ports::todo_repository::TodoRepository;
 use crate::features::todo::domain::{Todo, TodoId};
 use crate::features::todo::infrastructure::error::TodoInfraError;
-use crate::features::todo::infrastructure::mappers::todo_mapper::to_domain;
+use crate::features::todo::infrastructure::mappers::TodoMapper;
 use crate::features::todo::infrastructure::schema::todo::*;
 use crate::shared::infrastructure::database::DbPool;
 use crate::shared::kernel::error::AppError;
@@ -25,15 +25,7 @@ impl PostgresTodoRepository {
 #[async_trait::async_trait]
 impl TodoRepository for PostgresTodoRepository {
     async fn save(&self, todo: &Todo) -> Result<(), AppError> {
-        let active = ActiveModel {
-            id: Set(todo.id.into()),
-            title: Set(todo.title.as_str().to_string()),
-            status: Set(todo.status.to_string()),
-            created_at: Set(todo.created_at),
-            updated_at: Set(todo.updated_at),
-            deleted_at: Set(todo.deleted_at),
-            user_id: Set(todo.user_id.into()),
-        };
+        let active = TodoMapper::to_active_model(todo);
         let stmt = Entity::insert(active).on_conflict(
             OnConflict::column(Column::Id)
                 // ponytail: deleted_at intentionally excluded — saves must not un-delete.
@@ -58,7 +50,9 @@ impl TodoRepository for PostgresTodoRepository {
                 .one(&conn)
                 .await
                 .map_err(|e| AppError::from(TodoInfraError::from(e)))?;
-            row.map(to_domain).transpose().map_err(AppError::from)
+            row.map(TodoMapper::to_domain)
+                .transpose()
+                .map_err(AppError::from)
         })
     }
 
@@ -73,7 +67,7 @@ impl TodoRepository for PostgresTodoRepository {
                 .await
                 .map_err(|e| AppError::from(TodoInfraError::from(e)))?;
             rows.into_iter()
-                .map(to_domain)
+                .map(TodoMapper::to_domain)
                 .collect::<Result<Vec<_>, TodoInfraError>>()
                 .map_err(AppError::from)
         })

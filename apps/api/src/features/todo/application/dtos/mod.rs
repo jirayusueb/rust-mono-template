@@ -1,32 +1,11 @@
-use crate::features::todo::domain::{Status, Title, TodoId};
-use crate::shared::kernel::UserId;
+pub mod create_todo_command;
+pub mod delete_todo_command;
+pub mod get_todo_query;
+pub mod list_todos_query;
+pub mod update_todo_command;
 
-// --- Command DTOs ---
-
-pub struct CreateTodoCommand {
-    pub user_id: UserId,
-    pub title: Title,
-}
-
-pub struct UpdateTodoCommand {
-    pub user_id: UserId,
-    pub id: TodoId,
-    pub title: Option<Title>,
-    pub status: Option<Status>,
-}
-
-pub struct DeleteTodoCommand {
-    pub user_id: UserId,
-    pub id: TodoId,
-}
-
-// --- Query DTOs ---
-
-pub struct GetTodoQuery {
-    pub user_id: UserId,
-    pub id: TodoId,
-}
-
-pub struct ListTodosQuery {
-    pub user_id: UserId,
-}
+pub use create_todo_command::CreateTodoCommand;
+pub use delete_todo_command::DeleteTodoCommand;
+pub use get_todo_query::GetTodoQuery;
+pub use list_todos_query::ListTodosQuery;
+pub use update_todo_command::UpdateTodoCommand;

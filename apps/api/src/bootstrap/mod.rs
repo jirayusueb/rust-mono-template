@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::features::auth::application::dtos::AuthDeps;
+use crate::features::auth::application::deps::AuthDeps;
 use crate::features::auth::application::ports::auth_repository::AuthRepository;
 use crate::features::auth::application::ports::user_port::UserPort;
 use crate::features::todo::application::ports::todo_repository::TodoRepository;
