@@ -8,7 +8,7 @@ export function Header() {
   const { data: session, isLoading } = authClient.useSession();
   const invalidate = useInvalidateSession();
 
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
     await authClient.signOut();
     await invalidate();
   };
@@ -21,14 +21,14 @@ export function Header() {
       {!isLoading && session && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{session.user.email}</span>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
+          <Button variant="ghost" size="sm" onClick={handleSignOut}>
             Sign out
           </Button>
         </div>
       )}
       {!isLoading && !session && (
         <div className="flex items-center gap-2 text-sm">
-          <Link to="/login" className="text-muted-foreground underline">
+          <Link to="/sign-in" className="text-muted-foreground underline">
             Sign in
           </Link>
         </div>

@@ -1,19 +1,19 @@
 use std::sync::Arc;
 
-use crate::features::auth::application::dtos::{AuthDeps, AuthResult, RegisterCommand};
+use crate::features::auth::application::dtos::{AuthDeps, AuthResult, SignUpCommand};
 use crate::features::auth::domain::{Account, Password, Session};
 use crate::shared::kernel::error::AppError;
 
-pub struct RegisterHandler {
+pub struct SignUpHandler {
     deps: AuthDeps,
 }
 
-impl RegisterHandler {
+impl SignUpHandler {
     pub fn new(deps: AuthDeps) -> Self {
         Self { deps }
     }
 
-    pub async fn handle(&self, cmd: RegisterCommand) -> Result<AuthResult, AppError> {
+    pub async fn handle(&self, cmd: SignUpCommand) -> Result<AuthResult, AppError> {
         let password = Password::new(cmd.password)?;
 
         // Check email not taken (read-only, outside transaction)
@@ -46,11 +46,11 @@ impl RegisterHandler {
 
                 // Hash password + create credential account
                 let hash = hasher.hash(pw.as_str())?;
-                let account = Account::new_credential(user.id, hash);
+                let account = Account::create(user.id, hash);
                 auth_repo.save_credential(&account).await?;
 
                 // Create session
-                let session = Session::new(user.id, None, None);
+                let session = Session::create(user.id, None, None);
                 auth_repo.save_session(&session).await?;
 
                 *slot_clone.lock().unwrap() = Some(AuthResult {
@@ -106,7 +106,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn successful_registration() {
+    async fn successful_sign_up() {
         let user = make_user();
         let user_id = user.id;
 
@@ -123,8 +123,8 @@ mod tests {
         let mut hasher = MockPasswordHasher::new();
         hasher.expect_hash().returning(|_| Ok("hashed".into()));
 
-        let handler = RegisterHandler::new(make_deps(user_port, auth_repo, hasher));
-        let cmd = RegisterCommand {
+        let handler = SignUpHandler::new(make_deps(user_port, auth_repo, hasher));
+        let cmd = SignUpCommand {
             email: "new@example.com".into(),
             password: "strongpass".into(),
             name: None,
@@ -142,12 +142,12 @@ mod tests {
             .expect_find_by_email()
             .returning(|_| Ok(Some(make_user())));
 
-        let handler = RegisterHandler::new(make_deps(
+        let handler = SignUpHandler::new(make_deps(
             user_port,
             MockAuthRepository::new(),
             MockPasswordHasher::new(),
         ));
-        let cmd = RegisterCommand {
+        let cmd = SignUpCommand {
             email: "taken@example.com".into(),
             password: "strongpass".into(),
             name: None,
@@ -161,12 +161,12 @@ mod tests {
 
     #[tokio::test]
     async fn weak_password_validation() {
-        let handler = RegisterHandler::new(make_deps(
+        let handler = SignUpHandler::new(make_deps(
             MockUserPort::new(),
             MockAuthRepository::new(),
             MockPasswordHasher::new(),
         ));
-        let cmd = RegisterCommand {
+        let cmd = SignUpCommand {
             email: "new@example.com".into(),
             password: "short".into(),
             name: None,

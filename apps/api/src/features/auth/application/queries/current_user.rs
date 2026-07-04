@@ -90,13 +90,13 @@ mod tests {
 
     #[tokio::test]
     async fn returns_user_and_session_when_valid() {
-        let session = Session::new(UserId::new(), None, None);
+        let session = Session::create(UserId::new(), None, None);
         let session_user_id = session.user_id;
 
         let mut auth_repo = MockAuthRepository::new();
         auth_repo
             .expect_find_session_by_token()
-            .returning(move |_| Ok(Some(Session::new(session_user_id, None, None))));
+            .returning(move |_| Ok(Some(Session::create(session_user_id, None, None))));
 
         let mut user_port = MockUserPort::new();
         user_port
@@ -121,7 +121,7 @@ mod tests {
         auth_repo
             .expect_find_session_by_token()
             .returning(move |_| {
-                let mut s = Session::new(user_id, None, None);
+                let mut s = Session::create(user_id, None, None);
                 s.expires_at = Utc::now() + Duration::days(1); // < 3.5 days remaining
                 Ok(Some(s))
             });
@@ -160,7 +160,7 @@ mod tests {
             }
             "session_expired" => {
                 auth_repo.expect_find_session_by_token().returning(|_| {
-                    let mut s = Session::new(UserId::new(), None, None);
+                    let mut s = Session::create(UserId::new(), None, None);
                     s.expires_at = Utc::now() - Duration::days(1);
                     Ok(Some(s))
                 });
@@ -168,7 +168,7 @@ mod tests {
             "user_not_found" => {
                 auth_repo
                     .expect_find_session_by_token()
-                    .returning(|_| Ok(Some(Session::new(UserId::new(), None, None))));
+                    .returning(|_| Ok(Some(Session::create(UserId::new(), None, None))));
                 user_port.expect_find_by_id().returning(|_| Ok(None));
             }
             _ => unreachable!(),

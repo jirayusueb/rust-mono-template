@@ -16,6 +16,11 @@ impl Email {
         Ok(Self(value.to_lowercase()))
     }
 
+    /// Factory for EXISTING data (from trusted DB source). Bypasses validation.
+    pub fn restore(value: String) -> Self {
+        Self(value)
+    }
+
     pub fn as_str(&self) -> &str {
         &self.0
     }

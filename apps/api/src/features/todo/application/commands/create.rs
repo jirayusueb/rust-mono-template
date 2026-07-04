@@ -15,7 +15,7 @@ impl CreateTodoHandler {
     }
 
     pub async fn handle(&self, cmd: CreateTodoCommand) -> Result<TodoId, AppError> {
-        let todo = crate::features::todo::domain::Todo::new(cmd.user_id, cmd.title)?;
+        let todo = crate::features::todo::domain::Todo::create(cmd.user_id, cmd.title)?;
         let id = todo.id;
         self.repo.save(&todo).await?;
         Ok(id)

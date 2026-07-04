@@ -42,10 +42,10 @@ _Avoid_: Member, person, profile
 An authentication method linked to a User. For email/password, the Account holds
 the password hash with providerId "credential". For OAuth, it holds provider
 tokens. A User can have multiple Accounts (e.g. credential + GitHub).
-_Avoid_: Login, credential (when referring to the row), profile
+_Avoid_: Sign-in, credential (when referring to the row), profile
 
 **Session**:
-An active login, represented by an opaque token stored in an httpOnly cookie.
+An active sign-in, represented by an opaque token stored in an httpOnly cookie.
 Linked to a User via their ID. Has an expiry and optional device metadata (IP,
 user agent). Revocable by deleting the row.
 _Avoid_: Token (when referring to the row), connection
@@ -56,9 +56,9 @@ or an OAuth provider name (e.g. "github", "google").
 _Avoid_: Provider, auth type, method
 
 **Email**:
-A User's unique email address. Used as the login identifier and uniqueness
+A User's unique email address. Used as the sign-in identifier and uniqueness
 constraint.
-_Avoid_: Username, login id
+_Avoid_: Username, sign-in id
 
 ## Architecture Language
 

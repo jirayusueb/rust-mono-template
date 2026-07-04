@@ -1,16 +1,16 @@
-use crate::features::auth::application::dtos::{AuthDeps, LogoutCommand};
+use crate::features::auth::application::dtos::{AuthDeps, SignOutCommand};
 use crate::shared::kernel::error::AppError;
 
-pub struct LogoutHandler {
+pub struct SignOutHandler {
     deps: AuthDeps,
 }
 
-impl LogoutHandler {
+impl SignOutHandler {
     pub fn new(deps: AuthDeps) -> Self {
         Self { deps }
     }
 
-    pub async fn handle(&self, cmd: LogoutCommand) -> Result<(), AppError> {
+    pub async fn handle(&self, cmd: SignOutCommand) -> Result<(), AppError> {
         self.deps.auth_repo.delete_session(&cmd.token).await
     }
 }
@@ -39,8 +39,8 @@ mod tests {
         let mut auth_repo = MockAuthRepository::new();
         auth_repo.expect_delete_session().returning(|_| Ok(()));
 
-        let handler = LogoutHandler::new(make_deps(auth_repo));
-        let cmd = LogoutCommand {
+        let handler = SignOutHandler::new(make_deps(auth_repo));
+        let cmd = SignOutCommand {
             token: "session-token".into(),
         };
 
@@ -54,8 +54,8 @@ mod tests {
             .expect_delete_session()
             .returning(|_| Err(AppError::Internal("db error".into())));
 
-        let handler = LogoutHandler::new(make_deps(auth_repo));
-        let cmd = LogoutCommand {
+        let handler = SignOutHandler::new(make_deps(auth_repo));
+        let cmd = SignOutCommand {
             token: "session-token".into(),
         };
 

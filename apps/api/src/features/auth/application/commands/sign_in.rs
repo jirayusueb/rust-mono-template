@@ -1,17 +1,17 @@
-use crate::features::auth::application::dtos::{AuthDeps, AuthResult, LoginCommand};
+use crate::features::auth::application::dtos::{AuthDeps, AuthResult, SignInCommand};
 use crate::features::auth::domain::Session;
 use crate::shared::kernel::error::AppError;
 
-pub struct LoginHandler {
+pub struct SignInHandler {
     deps: AuthDeps,
 }
 
-impl LoginHandler {
+impl SignInHandler {
     pub fn new(deps: AuthDeps) -> Self {
         Self { deps }
     }
 
-    pub async fn handle(&self, cmd: LoginCommand) -> Result<AuthResult, AppError> {
+    pub async fn handle(&self, cmd: SignInCommand) -> Result<AuthResult, AppError> {
         // Find user by email
         let user = self
             .deps
@@ -38,7 +38,7 @@ impl LoginHandler {
         }
 
         // Create session
-        let session = Session::new(user.id, cmd.ip_address, cmd.user_agent);
+        let session = Session::create(user.id, cmd.ip_address, cmd.user_agent);
         self.deps.auth_repo.save_session(&session).await?;
 
         Ok(AuthResult {
@@ -86,8 +86,8 @@ mod tests {
         }
     }
 
-    fn make_cmd() -> LoginCommand {
-        LoginCommand {
+    fn make_cmd() -> SignInCommand {
+        SignInCommand {
             email: "user@example.com".into(),
             password: "password123".into(),
             ip_address: None,
@@ -96,7 +96,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn successful_login() {
+    async fn successful_sign_in() {
         let user = make_user();
         let user_id = user.id;
 
@@ -108,13 +108,13 @@ mod tests {
         let mut auth_repo = MockAuthRepository::new();
         auth_repo
             .expect_find_credential_by_user_id()
-            .returning(move |_| Ok(Some(Account::new_credential(user_id, "hashed".into()))));
+            .returning(move |_| Ok(Some(Account::create(user_id, "hashed".into()))));
         auth_repo.expect_save_session().returning(|_| Ok(()));
 
         let mut hasher = MockPasswordHasher::new();
         hasher.expect_verify().returning(|_, _| Ok(true));
 
-        let handler = LoginHandler::new(make_deps(user_port, auth_repo, hasher));
+        let handler = SignInHandler::new(make_deps(user_port, auth_repo, hasher));
         let result = handler.handle(make_cmd()).await.unwrap();
 
         assert_eq!(result.user.id, user_id);
@@ -126,7 +126,7 @@ mod tests {
     #[case::credential_not_found("credential_not_found")]
     #[case::password_mismatch("password_mismatch")]
     #[tokio::test]
-    async fn login_failure_paths_return_unauthorized(#[case] case: &str) {
+    async fn sign_in_failure_paths_return_unauthorized(#[case] case: &str) {
         let user = make_user();
         let user_id = user.id;
 
@@ -152,15 +152,13 @@ mod tests {
                     .returning(move |_| Ok(Some(user.clone())));
                 auth_repo
                     .expect_find_credential_by_user_id()
-                    .returning(move |_| {
-                        Ok(Some(Account::new_credential(user_id, "hashed".into())))
-                    });
+                    .returning(move |_| Ok(Some(Account::create(user_id, "hashed".into()))));
                 hasher.expect_verify().returning(|_, _| Ok(false));
             }
             _ => unreachable!(),
         }
 
-        let handler = LoginHandler::new(make_deps(user_port, auth_repo, hasher));
+        let handler = SignInHandler::new(make_deps(user_port, auth_repo, hasher));
         assert!(matches!(
             handler.handle(make_cmd()).await,
             Err(AppError::Unauthorized(_))

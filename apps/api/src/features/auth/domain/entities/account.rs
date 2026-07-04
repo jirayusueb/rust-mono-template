@@ -19,7 +19,8 @@ pub struct Account {
 }
 
 impl Account {
-    pub fn new_credential(user_id: UserId, password_hash: String) -> Self {
+    /// Factory for a NEW credential account (runs setup, stamps timestamps).
+    pub fn create(user_id: UserId, password_hash: String) -> Self {
         let now = Utc::now();
         Self {
             id: AccountId::new(),
@@ -29,6 +30,27 @@ impl Account {
             password: Some(password_hash),
             created_at: now,
             updated_at: now,
+        }
+    }
+
+    /// Factory for an EXISTING account (from trusted DB data). Bypasses validation.
+    pub fn restore(
+        id: AccountId,
+        user_id: UserId,
+        provider_id: String,
+        account_id: String,
+        password: Option<String>,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            user_id,
+            provider_id,
+            account_id,
+            password,
+            created_at,
+            updated_at,
         }
     }
 }

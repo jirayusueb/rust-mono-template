@@ -5,20 +5,20 @@ use crate::features::auth::application::ports::user_port::{AuthUserInfo, UserPor
 use crate::shared::application::unit_of_work::UnitOfWork;
 use crate::shared::application::utils::password_hasher::PasswordHasher;
 
-pub struct RegisterCommand {
+pub struct SignUpCommand {
     pub email: String,
     pub password: String,
     pub name: Option<String>,
 }
 
-pub struct LoginCommand {
+pub struct SignInCommand {
     pub email: String,
     pub password: String,
     pub ip_address: Option<String>,
     pub user_agent: Option<String>,
 }
 
-pub struct LogoutCommand {
+pub struct SignOutCommand {
     pub token: String,
 }
 
@@ -35,7 +35,7 @@ pub struct AuthDeps {
     pub uow: Arc<dyn UnitOfWork>,
 }
 
-/// Result of register/login — the handler needs both the user and session token.
+/// Result of sign-up/sign-in — the handler needs both the user and session token.
 pub struct AuthResult {
     pub user: AuthUserInfo,
     pub token: String,

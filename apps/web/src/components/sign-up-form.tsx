@@ -6,7 +6,7 @@ import { authClient, useInvalidateSession } from "../lib/auth-client";
 import type { ApiError } from "../lib/api";
 import { Button } from "@/components/ui/button";
 
-export function RegisterForm() {
+export function SignUpForm() {
   const { replace } = useRouter();
   const invalidate = useInvalidateSession();
   const [email, setEmail] = useState("");
@@ -29,7 +29,7 @@ export function RegisterForm() {
       replace("/");
     } catch (err) {
       const apiErr = err as ApiError;
-      setError(apiErr?.error?.message ?? "Registration failed");
+      setError(apiErr?.error?.message ?? "Sign up failed");
     } finally {
       setLoading(false);
     }
@@ -65,12 +65,12 @@ export function RegisterForm() {
         />
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={loading}>
-          {loading ? "Creating…" : "Register"}
+          {loading ? "Creating…" : "Sign up"}
         </Button>
       </form>
       <p className="text-sm text-muted-foreground">
         Have an account?{" "}
-        <Link to="/login" className="underline">
+        <Link to="/sign-in" className="underline">
           Sign in
         </Link>
       </p>

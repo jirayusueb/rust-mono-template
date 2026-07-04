@@ -20,7 +20,8 @@ pub struct Todo {
 }
 
 impl Todo {
-    pub fn new(user_id: UserId, title: Title) -> Result<Self, TodoDomainError> {
+    /// Factory for a NEW todo (runs validation, stamps timestamps).
+    pub fn create(user_id: UserId, title: Title) -> Result<Self, TodoDomainError> {
         let now = Utc::now();
         Ok(Self {
             id: TodoId::new(),
@@ -31,6 +32,27 @@ impl Todo {
             updated_at: now,
             deleted_at: None,
         })
+    }
+
+    /// Factory for an EXISTING todo (from trusted DB data). Bypasses validation.
+    pub fn restore(
+        id: TodoId,
+        user_id: UserId,
+        title: Title,
+        status: Status,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+        deleted_at: Option<DateTime<Utc>>,
+    ) -> Self {
+        Self {
+            id,
+            user_id,
+            title,
+            status,
+            created_at,
+            updated_at,
+            deleted_at,
+        }
     }
 
     pub fn complete(&mut self) -> Result<(), TodoDomainError> {
@@ -73,7 +95,7 @@ mod tests {
     use super::*;
 
     fn make_todo() -> Todo {
-        Todo::new(UserId::new(), Title::new("test".into()).unwrap()).unwrap()
+        Todo::create(UserId::new(), Title::new("test".into()).unwrap()).unwrap()
     }
 
     #[test]

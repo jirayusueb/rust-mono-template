@@ -9,12 +9,12 @@ use tower_governor::GovernorLayer;
 use validator::Validate;
 
 use crate::bootstrap::AppState;
-use crate::features::auth::application::commands::login::LoginHandler;
-use crate::features::auth::application::commands::logout::LogoutHandler;
-use crate::features::auth::application::commands::register::RegisterHandler;
-use crate::features::auth::application::dtos::{LoginCommand, LogoutCommand, RegisterCommand};
+use crate::features::auth::application::commands::sign_in::SignInHandler;
+use crate::features::auth::application::commands::sign_out::SignOutHandler;
+use crate::features::auth::application::commands::sign_up::SignUpHandler;
+use crate::features::auth::application::dtos::{SignInCommand, SignOutCommand, SignUpCommand};
 use crate::features::auth::presentation::http::dtos::{
-    LoginRequest, RegisterRequest, SessionPayload, UserResponse,
+    SessionPayload, SignInRequest, SignUpRequest, UserResponse,
 };
 use crate::shared::kernel::error::AppError;
 
@@ -33,26 +33,26 @@ pub fn auth_routes() -> Router<AppState> {
 
     // Rate-limited routes (brute-force targets)
     Router::new()
-        .route("/auth/register", post(register))
-        .route("/auth/login", post(login))
+        .route("/auth/sign-up", post(sign_up))
+        .route("/auth/sign-in", post(sign_in))
         .layer(governor)
         .merge(
             // Open routes
             Router::new()
-                .route("/auth/logout", post(logout))
+                .route("/auth/sign-out", post(sign_out))
                 .route("/auth/session", get(session)),
         )
 }
 
-async fn register(
+async fn sign_up(
     State(state): State<AppState>,
     jar: CookieJar,
-    Json(req): Json<RegisterRequest>,
+    Json(req): Json<SignUpRequest>,
 ) -> Result<(StatusCode, CookieJar, Json<UserResponse>), AppError> {
     req.validate()?;
-    let handler = RegisterHandler::new(state.auth_deps());
+    let handler = SignUpHandler::new(state.auth_deps());
     let result = handler
-        .handle(RegisterCommand {
+        .handle(SignUpCommand {
             email: req.email,
             password: req.password,
             name: req.name,
@@ -67,12 +67,12 @@ async fn register(
     ))
 }
 
-async fn login(
+async fn sign_in(
     State(state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<std::net::SocketAddr>,
     headers: HeaderMap,
     jar: CookieJar,
-    Json(req): Json<LoginRequest>,
+    Json(req): Json<SignInRequest>,
 ) -> Result<(StatusCode, CookieJar, Json<UserResponse>), AppError> {
     req.validate()?;
 
@@ -87,9 +87,9 @@ async fn login(
         .and_then(|v| v.to_str().ok())
         .map(String::from);
 
-    let handler = LoginHandler::new(state.auth_deps());
+    let handler = SignInHandler::new(state.auth_deps());
     let result = handler
-        .handle(LoginCommand {
+        .handle(SignInCommand {
             email: req.email,
             password: req.password,
             ip_address: Some(ip_address),
@@ -101,14 +101,14 @@ async fn login(
     Ok((StatusCode::OK, jar, Json(UserResponse::from(result.user))))
 }
 
-async fn logout(
+async fn sign_out(
     State(state): State<AppState>,
     jar: CookieJar,
 ) -> Result<(StatusCode, CookieJar), AppError> {
     if let Some(cookie) = jar.get(SESSION_COOKIE) {
-        let handler = LogoutHandler::new(state.auth_deps());
+        let handler = SignOutHandler::new(state.auth_deps());
         handler
-            .handle(LogoutCommand {
+            .handle(SignOutCommand {
                 token: cookie.value().to_string(),
             })
             .await?;

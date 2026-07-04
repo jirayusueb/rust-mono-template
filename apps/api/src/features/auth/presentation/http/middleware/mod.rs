@@ -6,7 +6,7 @@ use crate::bootstrap::AppState;
 use crate::features::auth::application::dtos::GetCurrentUserQuery;
 use crate::features::auth::application::ports::session_info::SessionInfo;
 use crate::features::auth::application::ports::user_port::AuthUserInfo;
-use crate::features::auth::application::queries::get_current_user::GetCurrentUserHandler;
+use crate::features::auth::application::queries::current_user::GetCurrentUserHandler;
 use crate::shared::kernel::error::AppError;
 
 /// Extractor that validates the session cookie and loads the authenticated user + session.

@@ -44,7 +44,7 @@ impl UserPort for UserPortAdapter {
 
     async fn create(&self, email: String, name: Option<String>) -> Result<AuthUserInfo, AppError> {
         let email = Email::new(email)?;
-        let user = User::new(email, name);
+        let user = User::create(email, name);
         self.repo.save(&user).await?;
         Ok(map(user))
     }

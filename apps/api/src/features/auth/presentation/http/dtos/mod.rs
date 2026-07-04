@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate)]
-pub struct RegisterRequest {
+pub struct SignUpRequest {
     #[validate(email)]
     pub email: String,
     #[validate(length(min = 8))]
@@ -13,7 +13,7 @@ pub struct RegisterRequest {
 }
 
 #[derive(Debug, Deserialize, Validate)]
-pub struct LoginRequest {
+pub struct SignInRequest {
     #[validate(email)]
     pub email: String,
     #[validate(length(min = 1))]

@@ -17,7 +17,8 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(email: Email, name: Option<String>) -> Self {
+    /// Factory for a NEW user (stamps timestamps, email unverified).
+    pub fn create(email: Email, name: Option<String>) -> Self {
         let now = Utc::now();
         Self {
             id: UserId::new(),
@@ -27,6 +28,27 @@ impl User {
             image: None,
             created_at: now,
             updated_at: now,
+        }
+    }
+
+    /// Factory for an EXISTING user (from trusted DB data). Bypasses validation.
+    pub fn restore(
+        id: UserId,
+        email: Email,
+        email_verified: bool,
+        name: Option<String>,
+        image: Option<String>,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            email,
+            email_verified,
+            name,
+            image,
+            created_at,
+            updated_at,
         }
     }
 }

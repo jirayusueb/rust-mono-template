@@ -6,7 +6,7 @@ import { authClient, useInvalidateSession } from "../lib/auth-client";
 import type { ApiError } from "../lib/api";
 import { Button } from "@/components/ui/button";
 
-export function LoginForm() {
+export function SignInForm() {
   const { replace } = useRouter();
   const invalidate = useInvalidateSession();
   const [email, setEmail] = useState("");
@@ -24,7 +24,7 @@ export function LoginForm() {
       replace("/");
     } catch (err) {
       const apiErr = err as ApiError;
-      setError(apiErr?.error?.message ?? "Login failed");
+      setError(apiErr?.error?.message ?? "Sign in failed");
     } finally {
       setLoading(false);
     }
@@ -57,8 +57,8 @@ export function LoginForm() {
       </form>
       <p className="text-sm text-muted-foreground">
         No account?{" "}
-        <Link to="/register" className="underline">
-          Register
+        <Link to="/sign-up" className="underline">
+          Sign up
         </Link>
       </p>
     </div>

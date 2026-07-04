@@ -31,7 +31,7 @@ mod tests {
     use crate::shared::kernel::UserId;
 
     fn make_todo() -> Todo {
-        Todo::new(UserId::new(), Title::new("test".into()).unwrap()).unwrap()
+        Todo::create(UserId::new(), Title::new("test".into()).unwrap()).unwrap()
     }
 
     #[tokio::test]

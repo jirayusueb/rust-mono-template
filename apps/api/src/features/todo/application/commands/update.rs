@@ -44,7 +44,7 @@ mod tests {
     use rstest::rstest;
 
     fn make_todo_with_status(status: Status) -> Todo {
-        let mut todo = Todo::new(UserId::new(), Title::new("test".into()).unwrap()).unwrap();
+        let mut todo = Todo::create(UserId::new(), Title::new("test".into()).unwrap()).unwrap();
         todo.status = status;
         todo
     }

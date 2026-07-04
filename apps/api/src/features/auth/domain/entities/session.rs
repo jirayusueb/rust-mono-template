@@ -19,7 +19,8 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new(user_id: UserId, ip_address: Option<String>, user_agent: Option<String>) -> Self {
+    /// Factory for a NEW session (generates token, stamps timestamps).
+    pub fn create(user_id: UserId, ip_address: Option<String>, user_agent: Option<String>) -> Self {
         let now = Utc::now();
         Self {
             id: Uuid::now_v7().to_string(),
@@ -30,6 +31,29 @@ impl Session {
             user_agent,
             created_at: now,
             updated_at: now,
+        }
+    }
+
+    /// Factory for an EXISTING session (from trusted DB data). Bypasses validation.
+    pub fn restore(
+        id: String,
+        token: String,
+        user_id: UserId,
+        expires_at: DateTime<Utc>,
+        ip_address: Option<String>,
+        user_agent: Option<String>,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            id,
+            token,
+            user_id,
+            expires_at,
+            ip_address,
+            user_agent,
+            created_at,
+            updated_at,
         }
     }
 

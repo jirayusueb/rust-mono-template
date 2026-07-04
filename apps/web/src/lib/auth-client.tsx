@@ -8,13 +8,13 @@ import { apiGet, apiPost, type SessionPayload } from "./api";
 export const authClient = {
   signIn: {
     emailPassword: (body: { email: string; password: string }) =>
-      apiPost<SessionPayload>("/auth/login", body),
+      apiPost<SessionPayload>("/auth/sign-in", body),
   },
   signUp: {
     emailPassword: (body: { email: string; password: string; name?: string }) =>
-      apiPost<SessionPayload>("/auth/register", body),
+      apiPost<SessionPayload>("/auth/sign-up", body),
   },
-  signOut: () => apiPost<void>("/auth/logout"),
+  signOut: () => apiPost<void>("/auth/sign-out"),
   useSession: () =>
     useQuery({
       queryKey: ["session"],
@@ -32,7 +32,7 @@ export function useRequireAuth() {
   const session = authClient.useSession();
   const { replace } = useRouter();
   useEffect(() => {
-    if (!session.isLoading && !session.data) replace("/login");
+    if (!session.isLoading && !session.data) replace("/sign-in");
   }, [session.isLoading, session.data, replace]);
   return session;
 }
