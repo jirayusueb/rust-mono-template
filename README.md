@@ -63,13 +63,13 @@ API default port: `3001`. Web dev server comes from Waku defaults.
 
 ## Configuration
 
-| Var | Example | Notes |
-|-----|---------|-------|
-| `DATABASE_URL` | `postgres://app:dev@localhost:5432/app` | Postgres DSN |
-| `DATABASE_MAX_CONNECTIONS` | `50` | SeaORM pool |
-| `DATABASE_ACQUIRE_TIMEOUT_SECS` | `5` | acquire timeout |
-| `PORT` | `3001` | API port |
-| `APP_ENV` | `development` | |
+| Var                             | Example                                 | Notes           |
+| ------------------------------- | --------------------------------------- | --------------- |
+| `DATABASE_URL`                  | `postgres://app:dev@localhost:5432/app` | Postgres DSN    |
+| `DATABASE_MAX_CONNECTIONS`      | `50`                                    | SeaORM pool     |
+| `DATABASE_ACQUIRE_TIMEOUT_SECS` | `5`                                     | acquire timeout |
+| `PORT`                          | `3001`                                  | API port        |
+| `APP_ENV`                       | `development`                           |                 |
 
 Copy `.env.example` → `.env` and edit. `.env` is gitignored; `.env.example` is tracked.
 
