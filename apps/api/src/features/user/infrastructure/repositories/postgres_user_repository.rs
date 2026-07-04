@@ -3,7 +3,7 @@ use sea_orm::*;
 use crate::features::user::application::ports::user_repository::UserRepository;
 use crate::features::user::domain::{Email, User};
 use crate::features::user::infrastructure::error::UserInfraError;
-use crate::features::user::infrastructure::mapper::user_mapper::to_domain;
+use crate::features::user::infrastructure::mappers::user_mapper::to_domain;
 use crate::features::user::infrastructure::schema::user::*;
 use crate::shared::infrastructure::database::DbPool;
 use crate::shared::kernel::error::AppError;

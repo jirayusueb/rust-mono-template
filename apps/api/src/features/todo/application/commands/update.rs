@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::features::todo::application::dtos::UpdateTodo;
+use crate::features::todo::application::dtos::UpdateTodoCommand;
 use crate::features::todo::application::ports::todo_repository::TodoRepository;
 use crate::features::todo::domain::Status;
 use crate::shared::kernel::error::AppError;
@@ -14,7 +14,7 @@ impl UpdateTodoHandler {
         Self { repo }
     }
 
-    pub async fn handle(&self, cmd: UpdateTodo) -> Result<(), AppError> {
+    pub async fn handle(&self, cmd: UpdateTodoCommand) -> Result<(), AppError> {
         let mut todo = self
             .repo
             .find_by_id(&cmd.id, &cmd.user_id)
@@ -53,9 +53,9 @@ mod tests {
         title: Option<&str>,
         status: Option<Status>,
         initial_status: Status,
-    ) -> (UpdateTodo, Todo) {
+    ) -> (UpdateTodoCommand, Todo) {
         let todo = make_todo_with_status(initial_status);
-        let cmd = UpdateTodo {
+        let cmd = UpdateTodoCommand {
             user_id: todo.user_id,
             id: todo.id,
             title: title.map(|t| Title::new(t.into()).unwrap()),

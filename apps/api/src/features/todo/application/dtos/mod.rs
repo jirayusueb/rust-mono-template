@@ -3,30 +3,30 @@ use crate::shared::kernel::UserId;
 
 // --- Command DTOs ---
 
-pub struct CreateTodo {
+pub struct CreateTodoCommand {
     pub user_id: UserId,
     pub title: Title,
 }
 
-pub struct UpdateTodo {
+pub struct UpdateTodoCommand {
     pub user_id: UserId,
     pub id: TodoId,
     pub title: Option<Title>,
     pub status: Option<Status>,
 }
 
-pub struct DeleteTodo {
+pub struct DeleteTodoCommand {
     pub user_id: UserId,
     pub id: TodoId,
 }
 
 // --- Query DTOs ---
 
-pub struct GetTodo {
+pub struct GetTodoQuery {
     pub user_id: UserId,
     pub id: TodoId,
 }
 
-pub struct ListTodos {
+pub struct ListTodosQuery {
     pub user_id: UserId,
 }

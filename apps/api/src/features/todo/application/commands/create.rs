@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::features::todo::application::dtos::CreateTodo;
+use crate::features::todo::application::dtos::CreateTodoCommand;
 use crate::features::todo::application::ports::todo_repository::TodoRepository;
 use crate::features::todo::domain::TodoId;
 use crate::shared::kernel::error::AppError;
@@ -14,7 +14,7 @@ impl CreateTodoHandler {
         Self { repo }
     }
 
-    pub async fn handle(&self, cmd: CreateTodo) -> Result<TodoId, AppError> {
+    pub async fn handle(&self, cmd: CreateTodoCommand) -> Result<TodoId, AppError> {
         let todo = crate::features::todo::domain::Todo::new(cmd.user_id, cmd.title)?;
         let id = todo.id;
         self.repo.save(&todo).await?;
@@ -29,8 +29,8 @@ mod tests {
     use crate::features::todo::domain::Title;
     use crate::shared::kernel::UserId;
 
-    fn make_cmd() -> CreateTodo {
-        CreateTodo {
+    fn make_cmd() -> CreateTodoCommand {
+        CreateTodoCommand {
             user_id: UserId::new(),
             title: Title::new("buy milk".into()).unwrap(),
         }

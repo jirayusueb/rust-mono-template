@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::features::todo::application::ports::todo_repository::TodoRepository;
 use crate::features::todo::domain::{Todo, TodoId};
 use crate::features::todo::infrastructure::error::TodoInfraError;
-use crate::features::todo::infrastructure::mapper::todo_mapper::to_domain;
+use crate::features::todo::infrastructure::mappers::todo_mapper::to_domain;
 use crate::features::todo::infrastructure::schema::todo::*;
 use crate::shared::infrastructure::database::DbPool;
 use crate::shared::kernel::error::AppError;

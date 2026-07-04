@@ -16,12 +16,12 @@ impl GetCurrentUserHandler {
 
     pub async fn handle(
         &self,
-        cmd: GetCurrentUserQuery,
+        query: GetCurrentUserQuery,
     ) -> Result<(AuthUserInfo, SessionInfo), AppError> {
         let mut session = self
             .deps
             .auth_repo
-            .find_session_by_token(&cmd.token)
+            .find_session_by_token(&query.token)
             .await?
             .ok_or_else(|| AppError::Unauthorized("not authenticated".into()))?;
 

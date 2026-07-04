@@ -12,7 +12,7 @@ use crate::features::todo::application::commands::create::CreateTodoHandler;
 use crate::features::todo::application::commands::delete::DeleteTodoHandler;
 use crate::features::todo::application::commands::update::UpdateTodoHandler;
 use crate::features::todo::application::dtos::{
-    CreateTodo, DeleteTodo, GetTodo, ListTodos, UpdateTodo,
+    CreateTodoCommand, DeleteTodoCommand, GetTodoQuery, ListTodosQuery, UpdateTodoCommand,
 };
 use crate::features::todo::application::queries::get::GetTodoHandler;
 use crate::features::todo::application::queries::list::ListTodosHandler;
@@ -39,7 +39,7 @@ async fn create_todo(
     let title = Title::new(req.title)?;
     let handler = CreateTodoHandler::new(state.todo_repo.clone());
     let id = handler
-        .handle(CreateTodo {
+        .handle(CreateTodoCommand {
             user_id: auth.id,
             title,
         })
@@ -55,7 +55,7 @@ async fn list_todos(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<TodoResponse>>, AppError> {
     let handler = ListTodosHandler::new(state.todo_repo.clone());
-    let todos = handler.handle(ListTodos { user_id: auth.id }).await?;
+    let todos = handler.handle(ListTodosQuery { user_id: auth.id }).await?;
     Ok(Json(todos.into_iter().map(TodoResponse::from).collect()))
 }
 
@@ -67,7 +67,7 @@ async fn get_todo(
     let id = TodoId::from_str(&id)?;
     let handler = GetTodoHandler::new(state.todo_repo.clone());
     let todo = handler
-        .handle(GetTodo {
+        .handle(GetTodoQuery {
             user_id: auth.id,
             id,
         })
@@ -89,7 +89,7 @@ async fn update_todo(
     };
     let handler = UpdateTodoHandler::new(state.todo_repo.clone());
     handler
-        .handle(UpdateTodo {
+        .handle(UpdateTodoCommand {
             user_id: auth.id,
             id,
             title,
@@ -107,7 +107,7 @@ async fn delete_todo(
     let id = TodoId::from_str(&id)?;
     let handler = DeleteTodoHandler::new(state.todo_repo.clone());
     handler
-        .handle(DeleteTodo {
+        .handle(DeleteTodoCommand {
             user_id: auth.id,
             id,
         })

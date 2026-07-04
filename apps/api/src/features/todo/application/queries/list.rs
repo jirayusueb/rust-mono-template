@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::features::todo::application::dtos::ListTodos;
+use crate::features::todo::application::dtos::ListTodosQuery;
 use crate::features::todo::application::ports::todo_repository::TodoRepository;
 use crate::features::todo::domain::Todo;
 use crate::shared::kernel::error::AppError;
@@ -14,7 +14,7 @@ impl ListTodosHandler {
         Self { repo }
     }
 
-    pub async fn handle(&self, cmd: ListTodos) -> Result<Vec<Todo>, AppError> {
+    pub async fn handle(&self, cmd: ListTodosQuery) -> Result<Vec<Todo>, AppError> {
         self.repo.find_all(&cmd.user_id).await
     }
 }
@@ -37,7 +37,7 @@ mod tests {
             .returning(|_| Ok(vec![make_todo(), make_todo()]));
 
         let handler = ListTodosHandler::new(Arc::new(mock));
-        let cmd = ListTodos {
+        let cmd = ListTodosQuery {
             user_id: UserId::new(),
         };
 
@@ -51,7 +51,7 @@ mod tests {
         mock.expect_find_all().returning(|_| Ok(vec![]));
 
         let handler = ListTodosHandler::new(Arc::new(mock));
-        let cmd = ListTodos {
+        let cmd = ListTodosQuery {
             user_id: UserId::new(),
         };
 
