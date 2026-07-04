@@ -4,7 +4,20 @@ target/
 # Node
 node_modules/
 dist/
+bun-debug*.log
 
-# Env
+# Env (keep .env.example tracked)
 .env
 .env.*
+!.env.example
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local planning / AI-context notes (not part of the template)
+PLAN.md
+plans/
+**/CONTEXT.md
