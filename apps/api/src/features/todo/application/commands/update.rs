@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::features::todo::application::dtos::UpdateTodoCommand;
+use crate::features::todo::application::dtos::UpdateTodoInput;
 use crate::features::todo::application::ports::todo_repository::TodoRepository;
 use crate::features::todo::domain::Status;
 use crate::shared::kernel::error::AppError;
@@ -14,7 +14,7 @@ impl UpdateTodoHandler {
         Self { repo }
     }
 
-    pub async fn handle(&self, cmd: UpdateTodoCommand) -> Result<(), AppError> {
+    pub async fn handle(&self, cmd: UpdateTodoInput) -> Result<(), AppError> {
         let mut todo = self
             .repo
             .find_by_id(&cmd.id, &cmd.user_id)
@@ -49,13 +49,13 @@ mod tests {
         todo
     }
 
-    fn make_cmd(
+    fn make_input(
         title: Option<&str>,
         status: Option<Status>,
         initial_status: Status,
-    ) -> (UpdateTodoCommand, Todo) {
+    ) -> (UpdateTodoInput, Todo) {
         let todo = make_todo_with_status(initial_status);
-        let cmd = UpdateTodoCommand {
+        let cmd = UpdateTodoInput {
             user_id: todo.user_id,
             id: todo.id,
             title: title.map(|t| Title::new(t.into()).unwrap()),
@@ -76,7 +76,7 @@ mod tests {
         #[case] status: Option<Status>,
         #[case] initial_status: Status,
     ) {
-        let (cmd, _todo) = make_cmd(title, status, initial_status);
+        let (cmd, _todo) = make_input(title, status, initial_status);
         let todo_for_mock = make_todo_with_status(initial_status);
 
         let mut mock = MockTodoRepository::new();
@@ -94,7 +94,7 @@ mod tests {
         mock.expect_find_by_id().returning(|_, _| Ok(None));
 
         let handler = UpdateTodoHandler::new(Arc::new(mock));
-        let (cmd, _) = make_cmd(None, None, Status::Pending);
+        let (cmd, _) = make_input(None, None, Status::Pending);
 
         assert!(matches!(
             handler.handle(cmd).await.unwrap_err(),
@@ -109,7 +109,7 @@ mod tests {
             .returning(|_, _| Ok(Some(make_todo_with_status(Status::Completed))));
 
         let handler = UpdateTodoHandler::new(Arc::new(mock));
-        let (cmd, _) = make_cmd(None, Some(Status::Completed), Status::Completed);
+        let (cmd, _) = make_input(None, Some(Status::Completed), Status::Completed);
 
         assert!(matches!(
             handler.handle(cmd).await.unwrap_err(),
@@ -124,7 +124,7 @@ mod tests {
             .returning(|_, _| Ok(Some(make_todo_with_status(Status::Pending))));
 
         let handler = UpdateTodoHandler::new(Arc::new(mock));
-        let (cmd, _) = make_cmd(None, Some(Status::Pending), Status::Pending);
+        let (cmd, _) = make_input(None, Some(Status::Pending), Status::Pending);
 
         assert!(matches!(
             handler.handle(cmd).await.unwrap_err(),

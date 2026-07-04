@@ -1,6 +1,5 @@
 use crate::features::auth::application::deps::AuthDeps;
-use crate::features::auth::application::dtos::SignInCommand;
-use crate::features::auth::application::result::AuthResult;
+use crate::features::auth::application::dtos::{SignInInput, SignInOutput};
 use crate::features::auth::domain::Session;
 use crate::shared::kernel::error::AppError;
 
@@ -13,7 +12,7 @@ impl SignInHandler {
         Self { deps }
     }
 
-    pub async fn handle(&self, cmd: SignInCommand) -> Result<AuthResult, AppError> {
+    pub async fn handle(&self, cmd: SignInInput) -> Result<SignInOutput, AppError> {
         // Find user by email
         let user = self
             .deps
@@ -43,7 +42,7 @@ impl SignInHandler {
         let session = Session::create(user.id, cmd.ip_address, cmd.user_agent);
         self.deps.auth_repo.save_session(&session).await?;
 
-        Ok(AuthResult {
+        Ok(SignInOutput {
             user,
             token: session.token,
         })
@@ -88,8 +87,8 @@ mod tests {
         }
     }
 
-    fn make_cmd() -> SignInCommand {
-        SignInCommand {
+    fn make_input() -> SignInInput {
+        SignInInput {
             email: "user@example.com".into(),
             password: "password123".into(),
             ip_address: None,
@@ -117,7 +116,7 @@ mod tests {
         hasher.expect_verify().returning(|_, _| Ok(true));
 
         let handler = SignInHandler::new(make_deps(user_port, auth_repo, hasher));
-        let result = handler.handle(make_cmd()).await.unwrap();
+        let result = handler.handle(make_input()).await.unwrap();
 
         assert_eq!(result.user.id, user_id);
         assert!(!result.token.is_empty());
@@ -162,7 +161,7 @@ mod tests {
 
         let handler = SignInHandler::new(make_deps(user_port, auth_repo, hasher));
         assert!(matches!(
-            handler.handle(make_cmd()).await,
+            handler.handle(make_input()).await,
             Err(AppError::Unauthorized(_))
         ));
     }

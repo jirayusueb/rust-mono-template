@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
-use crate::features::todo::application::dtos::GetTodoQuery;
+use crate::features::todo::application::dtos::{GetTodoInput, GetTodoOutput};
 use crate::features::todo::application::ports::todo_repository::TodoRepository;
-use crate::features::todo::domain::Todo;
 use crate::shared::kernel::error::AppError;
 
 pub struct GetTodoHandler {
@@ -14,11 +13,13 @@ impl GetTodoHandler {
         Self { repo }
     }
 
-    pub async fn handle(&self, cmd: GetTodoQuery) -> Result<Todo, AppError> {
-        self.repo
+    pub async fn handle(&self, cmd: GetTodoInput) -> Result<GetTodoOutput, AppError> {
+        let todo = self
+            .repo
             .find_by_id(&cmd.id, &cmd.user_id)
             .await?
-            .ok_or_else(|| AppError::NotFound("todo not found".into()))
+            .ok_or_else(|| AppError::NotFound("todo not found".into()))?;
+        Ok(todo.into())
     }
 }
 
@@ -26,7 +27,7 @@ impl GetTodoHandler {
 mod tests {
     use super::*;
     use crate::features::todo::application::ports::todo_repository::MockTodoRepository;
-    use crate::features::todo::domain::{Title, TodoId};
+    use crate::features::todo::domain::{Title, Todo, TodoId};
     use crate::shared::kernel::UserId;
 
     fn make_todo() -> Todo {
@@ -40,7 +41,7 @@ mod tests {
             .returning(|_, _| Ok(Some(make_todo())));
 
         let handler = GetTodoHandler::new(Arc::new(mock));
-        let cmd = GetTodoQuery {
+        let cmd = GetTodoInput {
             user_id: UserId::new(),
             id: TodoId::new(),
         };
@@ -54,7 +55,7 @@ mod tests {
         mock.expect_find_by_id().returning(|_, _| Ok(None));
 
         let handler = GetTodoHandler::new(Arc::new(mock));
-        let cmd = GetTodoQuery {
+        let cmd = GetTodoInput {
             user_id: UserId::new(),
             id: TodoId::new(),
         };

@@ -1,9 +1,8 @@
 use chrono::Utc;
 
 use crate::features::auth::application::deps::AuthDeps;
-use crate::features::auth::application::dtos::GetCurrentUserQuery;
+use crate::features::auth::application::dtos::{GetCurrentUserInput, GetCurrentUserOutput};
 use crate::features::auth::application::ports::session_info::SessionInfo;
-use crate::features::auth::application::ports::user_port::AuthUserInfo;
 use crate::shared::kernel::error::AppError;
 
 pub struct GetCurrentUserHandler {
@@ -17,8 +16,8 @@ impl GetCurrentUserHandler {
 
     pub async fn handle(
         &self,
-        query: GetCurrentUserQuery,
-    ) -> Result<(AuthUserInfo, SessionInfo), AppError> {
+        query: GetCurrentUserInput,
+    ) -> Result<GetCurrentUserOutput, AppError> {
         let mut session = self
             .deps
             .auth_repo
@@ -50,7 +49,10 @@ impl GetCurrentUserHandler {
             created_at: session.created_at,
         };
 
-        Ok((user, session_info))
+        Ok(GetCurrentUserOutput {
+            user,
+            session: session_info,
+        })
     }
 }
 
@@ -105,13 +107,13 @@ mod tests {
             .returning(|_| Ok(Some(make_user())));
 
         let handler = GetCurrentUserHandler::new(make_deps(user_port, auth_repo));
-        let cmd = GetCurrentUserQuery {
+        let cmd = GetCurrentUserInput {
             token: "valid-token".into(),
         };
 
-        let (user, session_info) = handler.handle(cmd).await.unwrap();
-        assert_eq!(user.email, "user@example.com");
-        assert!(session_info.expires_at > Utc::now());
+        let result = handler.handle(cmd).await.unwrap();
+        assert_eq!(result.user.email, "user@example.com");
+        assert!(result.session.expires_at > Utc::now());
     }
 
     #[tokio::test]
@@ -136,12 +138,12 @@ mod tests {
             .returning(|_| Ok(Some(make_user())));
 
         let handler = GetCurrentUserHandler::new(make_deps(user_port, auth_repo));
-        let cmd = GetCurrentUserQuery {
+        let cmd = GetCurrentUserInput {
             token: "valid-token".into(),
         };
 
-        let (_user, session_info) = handler.handle(cmd).await.unwrap();
-        assert!(session_info.expires_at > Utc::now() + Duration::days(6));
+        let result = handler.handle(cmd).await.unwrap();
+        assert!(result.session.expires_at > Utc::now() + Duration::days(6));
     }
 
     #[rstest]
@@ -176,7 +178,7 @@ mod tests {
         }
 
         let handler = GetCurrentUserHandler::new(make_deps(user_port, auth_repo));
-        let cmd = GetCurrentUserQuery {
+        let cmd = GetCurrentUserInput {
             token: "some-token".into(),
         };
 

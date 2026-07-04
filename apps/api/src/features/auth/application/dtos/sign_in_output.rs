@@ -1,7 +1,7 @@
 use crate::features::auth::application::ports::user_port::AuthUserInfo;
 
-/// Result of sign-up/sign-in — the handler needs both the user and session token.
-pub struct AuthResult {
+/// Output of sign-in: the authenticated user + the session token to set as cookie.
+pub struct SignInOutput {
     pub user: AuthUserInfo,
     pub token: String,
 }

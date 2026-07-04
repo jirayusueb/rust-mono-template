@@ -1,4 +1,4 @@
-pub struct SignInCommand {
+pub struct SignInInput {
     pub email: String,
     pub password: String,
     pub ip_address: Option<String>,

@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
-use crate::features::todo::application::dtos::CreateTodoCommand;
+use crate::features::todo::application::dtos::{CreateTodoInput, CreateTodoOutput};
 use crate::features::todo::application::ports::todo_repository::TodoRepository;
-use crate::features::todo::domain::TodoId;
 use crate::shared::kernel::error::AppError;
 
 pub struct CreateTodoHandler {
@@ -14,11 +13,13 @@ impl CreateTodoHandler {
         Self { repo }
     }
 
-    pub async fn handle(&self, cmd: CreateTodoCommand) -> Result<TodoId, AppError> {
+    pub async fn handle(&self, cmd: CreateTodoInput) -> Result<CreateTodoOutput, AppError> {
         let todo = crate::features::todo::domain::Todo::create(cmd.user_id, cmd.title)?;
         let id = todo.id;
         self.repo.save(&todo).await?;
-        Ok(id)
+        Ok(CreateTodoOutput {
+            id: id.to_string(),
+        })
     }
 }
 
@@ -29,8 +30,8 @@ mod tests {
     use crate::features::todo::domain::Title;
     use crate::shared::kernel::UserId;
 
-    fn make_cmd() -> CreateTodoCommand {
-        CreateTodoCommand {
+    fn make_input() -> CreateTodoInput {
+        CreateTodoInput {
             user_id: UserId::new(),
             title: Title::new("buy milk".into()).unwrap(),
         }
@@ -42,9 +43,9 @@ mod tests {
         mock.expect_save().returning(|_| Ok(()));
 
         let handler = CreateTodoHandler::new(Arc::new(mock));
-        let cmd = make_cmd();
+        let input = make_input();
 
-        let result = handler.handle(cmd).await;
+        let result = handler.handle(input).await;
         assert!(result.is_ok());
     }
 
@@ -55,7 +56,7 @@ mod tests {
             .returning(|_| Err(AppError::Internal("db down".into())));
 
         let handler = CreateTodoHandler::new(Arc::new(mock));
-        let result = handler.handle(make_cmd()).await;
+        let result = handler.handle(make_input()).await;
 
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), AppError::Internal(_)));

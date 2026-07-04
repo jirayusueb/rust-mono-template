@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::features::todo::application::dtos::DeleteTodoCommand;
+use crate::features::todo::application::dtos::DeleteTodoInput;
 use crate::features::todo::application::ports::todo_repository::TodoRepository;
 use crate::shared::kernel::error::AppError;
 
@@ -13,7 +13,7 @@ impl DeleteTodoHandler {
         Self { repo }
     }
 
-    pub async fn handle(&self, cmd: DeleteTodoCommand) -> Result<(), AppError> {
+    pub async fn handle(&self, cmd: DeleteTodoInput) -> Result<(), AppError> {
         self.repo
             .find_by_id(&cmd.id, &cmd.user_id)
             .await?
@@ -37,7 +37,7 @@ mod tests {
     #[tokio::test]
     async fn deletes_existing_todo() {
         let todo = make_todo();
-        let cmd = DeleteTodoCommand {
+        let cmd = DeleteTodoInput {
             user_id: todo.user_id,
             id: todo.id,
         };
@@ -57,7 +57,7 @@ mod tests {
         mock.expect_find_by_id().returning(|_, _| Ok(None));
 
         let handler = DeleteTodoHandler::new(Arc::new(mock));
-        let cmd = DeleteTodoCommand {
+        let cmd = DeleteTodoInput {
             user_id: UserId::new(),
             id: TodoId::new(),
         };

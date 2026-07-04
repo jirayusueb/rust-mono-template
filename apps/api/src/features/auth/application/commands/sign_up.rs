@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use crate::features::auth::application::deps::AuthDeps;
-use crate::features::auth::application::dtos::SignUpCommand;
-use crate::features::auth::application::result::AuthResult;
+use crate::features::auth::application::dtos::{SignUpInput, SignUpOutput};
 use crate::features::auth::domain::{Account, Password, Session};
 use crate::shared::kernel::error::AppError;
 
@@ -15,7 +14,7 @@ impl SignUpHandler {
         Self { deps }
     }
 
-    pub async fn handle(&self, cmd: SignUpCommand) -> Result<AuthResult, AppError> {
+    pub async fn handle(&self, cmd: SignUpInput) -> Result<SignUpOutput, AppError> {
         let password = Password::new(cmd.password)?;
 
         // Check email not taken (read-only, outside transaction)
@@ -30,7 +29,7 @@ impl SignUpHandler {
         }
 
         // Capture result from inside the transaction closure
-        let result_slot = Arc::new(std::sync::Mutex::new(None::<AuthResult>));
+        let result_slot = Arc::new(std::sync::Mutex::new(None::<SignUpOutput>));
         let slot_clone = result_slot.clone();
 
         let user_port = self.deps.user_port.clone();
@@ -55,7 +54,7 @@ impl SignUpHandler {
                 let session = Session::create(user.id, None, None);
                 auth_repo.save_session(&session).await?;
 
-                *slot_clone.lock().unwrap() = Some(AuthResult {
+                *slot_clone.lock().unwrap() = Some(SignUpOutput {
                     token: session.token,
                     user,
                 });
@@ -126,13 +125,13 @@ mod tests {
         hasher.expect_hash().returning(|_| Ok("hashed".into()));
 
         let handler = SignUpHandler::new(make_deps(user_port, auth_repo, hasher));
-        let cmd = SignUpCommand {
+        let input = SignUpInput {
             email: "new@example.com".into(),
             password: "strongpass".into(),
             name: None,
         };
 
-        let result = handler.handle(cmd).await.unwrap();
+        let result = handler.handle(input).await.unwrap();
         assert_eq!(result.user.id, user_id);
         assert!(!result.token.is_empty());
     }
@@ -149,14 +148,14 @@ mod tests {
             MockAuthRepository::new(),
             MockPasswordHasher::new(),
         ));
-        let cmd = SignUpCommand {
+        let input = SignUpInput {
             email: "taken@example.com".into(),
             password: "strongpass".into(),
             name: None,
         };
 
         assert!(matches!(
-            handler.handle(cmd).await,
+            handler.handle(input).await,
             Err(AppError::Conflict(_))
         ));
     }
@@ -168,14 +167,14 @@ mod tests {
             MockAuthRepository::new(),
             MockPasswordHasher::new(),
         ));
-        let cmd = SignUpCommand {
+        let input = SignUpInput {
             email: "new@example.com".into(),
             password: "short".into(),
             name: None,
         };
 
         assert!(matches!(
-            handler.handle(cmd).await,
+            handler.handle(input).await,
             Err(AppError::Validation(_))
         ));
     }

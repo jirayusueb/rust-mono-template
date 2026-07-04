@@ -3,7 +3,7 @@ use axum::http::request::Parts;
 use axum_extra::extract::CookieJar;
 
 use crate::bootstrap::AppState;
-use crate::features::auth::application::dtos::GetCurrentUserQuery;
+use crate::features::auth::application::dtos::GetCurrentUserInput;
 use crate::features::auth::application::ports::session_info::SessionInfo;
 use crate::features::auth::application::ports::user_port::AuthUserInfo;
 use crate::features::auth::application::queries::current_user::GetCurrentUserHandler;
@@ -29,12 +29,12 @@ impl FromRequestParts<AppState> for AuthUser {
             .value();
 
         let handler = GetCurrentUserHandler::new(state.auth_deps());
-        let (user, session) = handler
-            .handle(GetCurrentUserQuery {
+        let result = handler
+            .handle(GetCurrentUserInput {
                 token: token.to_string(),
             })
             .await?;
 
-        Ok(AuthUser(user, session))
+        Ok(AuthUser(result.user, result.session))
     }
 }

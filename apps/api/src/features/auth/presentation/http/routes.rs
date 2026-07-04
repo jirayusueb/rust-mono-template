@@ -12,7 +12,7 @@ use crate::bootstrap::AppState;
 use crate::features::auth::application::commands::sign_in::SignInHandler;
 use crate::features::auth::application::commands::sign_out::SignOutHandler;
 use crate::features::auth::application::commands::sign_up::SignUpHandler;
-use crate::features::auth::application::dtos::SignOutCommand;
+use crate::features::auth::application::dtos::SignOutInput;
 use crate::features::auth::presentation::http::dtos::{
     SessionResponse, SignInRequest, SignUpRequest, UserResponse,
 };
@@ -53,7 +53,7 @@ async fn sign_up(
     req.validate()?;
     let handler = SignUpHandler::new(state.auth_deps());
     let result = handler
-        .handle(AuthMapper::to_sign_up_command(req))
+        .handle(AuthMapper::to_sign_up_input(req))
         .await?;
 
     let jar = jar.add(build_cookie(&result.token, !state.is_dev));
@@ -86,7 +86,7 @@ async fn sign_in(
 
     let handler = SignInHandler::new(state.auth_deps());
     let result = handler
-        .handle(AuthMapper::to_sign_in_command(
+        .handle(AuthMapper::to_sign_in_input(
             req,
             Some(ip_address),
             user_agent,
@@ -108,7 +108,7 @@ async fn sign_out(
     if let Some(cookie) = jar.get(SESSION_COOKIE) {
         let handler = SignOutHandler::new(state.auth_deps());
         handler
-            .handle(SignOutCommand {
+            .handle(SignOutInput {
                 token: cookie.value().to_string(),
             })
             .await?;

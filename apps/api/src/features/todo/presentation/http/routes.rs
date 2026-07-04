@@ -12,7 +12,7 @@ use crate::features::todo::application::commands::create::CreateTodoHandler;
 use crate::features::todo::application::commands::delete::DeleteTodoHandler;
 use crate::features::todo::application::commands::update::UpdateTodoHandler;
 use crate::features::todo::application::dtos::{
-    DeleteTodoCommand, GetTodoQuery, ListTodosQuery,
+    DeleteTodoInput, GetTodoInput, ListTodosInput,
 };
 use crate::features::todo::application::queries::get::GetTodoHandler;
 use crate::features::todo::application::queries::list::ListTodosHandler;
@@ -38,12 +38,12 @@ async fn create_todo(
 ) -> Result<(StatusCode, Json<CreateTodoResponse>), AppError> {
     req.validate()?;
     let handler = CreateTodoHandler::new(state.todo_repo.clone());
-    let id = handler
-        .handle(TodoMapper::to_create_command(req, auth.id)?)
+    let output = handler
+        .handle(TodoMapper::to_create_input(req, auth.id)?)
         .await?;
     Ok((
         StatusCode::CREATED,
-        Json(TodoMapper::to_create_response(id)),
+        Json(TodoMapper::from_create_output(output)),
     ))
 }
 
@@ -52,11 +52,14 @@ async fn list_todos(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<TodoResponse>>, AppError> {
     let handler = ListTodosHandler::new(state.todo_repo.clone());
-    let todos = handler.handle(ListTodosQuery { user_id: auth.id }).await?;
+    let output = handler
+        .handle(ListTodosInput { user_id: auth.id })
+        .await?;
     Ok(Json(
-        todos
+        output
+            .todos
             .into_iter()
-            .map(TodoMapper::to_todo_response)
+            .map(TodoMapper::from_get_output)
             .collect(),
     ))
 }
@@ -68,13 +71,13 @@ async fn get_todo(
 ) -> Result<Json<TodoResponse>, AppError> {
     let id = TodoId::from_str(&id)?;
     let handler = GetTodoHandler::new(state.todo_repo.clone());
-    let todo = handler
-        .handle(GetTodoQuery {
+    let output = handler
+        .handle(GetTodoInput {
             user_id: auth.id,
             id,
         })
         .await?;
-    Ok(Json(TodoMapper::to_todo_response(todo)))
+    Ok(Json(TodoMapper::from_get_output(output)))
 }
 
 async fn update_todo(
@@ -87,7 +90,7 @@ async fn update_todo(
     let id = TodoId::from_str(&id)?;
     let handler = UpdateTodoHandler::new(state.todo_repo.clone());
     handler
-        .handle(TodoMapper::to_update_command(req, auth.id, id)?)
+        .handle(TodoMapper::to_update_input(req, auth.id, id)?)
         .await?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -100,7 +103,7 @@ async fn delete_todo(
     let id = TodoId::from_str(&id)?;
     let handler = DeleteTodoHandler::new(state.todo_repo.clone());
     handler
-        .handle(DeleteTodoCommand {
+        .handle(DeleteTodoInput {
             user_id: auth.id,
             id,
         })
