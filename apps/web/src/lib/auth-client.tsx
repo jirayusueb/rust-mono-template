@@ -3,22 +3,20 @@
 import { useEffect, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "waku";
-import { apiGet, apiPost, type SessionResponse } from "./api";
+import { client } from "./client";
 
 export const authClient = {
   signIn: {
-    emailPassword: (body: { email: string; password: string }) =>
-      apiPost<SessionResponse>("/auth/sign-in", body),
+    emailPassword: client.auth.signIn,
   },
   signUp: {
-    emailPassword: (body: { email: string; password: string; name?: string }) =>
-      apiPost<SessionResponse>("/auth/sign-up", body),
+    emailPassword: client.auth.signUp,
   },
-  signOut: () => apiPost<void>("/auth/sign-out"),
+  signOut: client.auth.signOut,
   useSession: () =>
     useQuery({
       queryKey: ["session"],
-      queryFn: () => apiGet<SessionResponse>("/auth/session"),
+      queryFn: () => client.auth.session(),
       retry: false,
     }),
 };

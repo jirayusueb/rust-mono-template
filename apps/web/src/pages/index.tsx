@@ -1,7 +1,7 @@
 import { Link } from "waku";
 import { Counter } from "../components/counter";
 import { HealthCheck } from "@/components/health-check";
-import { apiGet, type Health } from "@/lib/api";
+import { client } from "@/lib/client";
 import { RequireAuth } from "@/lib/auth-client";
 
 export default async function HomePage() {
@@ -30,7 +30,7 @@ const getData = async () => {
   // ponytail: server-side fetch proves cross-server wiring on initial load
   let apiStatus = "unavailable";
   try {
-    const health = await apiGet<Health>("/health");
+    const health = await client.health.check();
     apiStatus = health.status ?? apiStatus;
   } catch {
     // API server not running — show default

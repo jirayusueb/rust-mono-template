@@ -1,16 +1,17 @@
 {
   "private": true,
-  "type": "module",
   "workspaces": [
     "apps/web"
   ],
+  "type": "module",
   "scripts": {
     "dev": "concurrently \"bun run --filter web dev\" \"cargo run -p api\"",
     "build": "bun run --filter web build && cargo build -p api",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
     "format": "oxfmt .",
-    "format:check": "oxfmt . --check"
+    "format:check": "oxfmt . --check",
+    "typegen": "cargo test -p api"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.0",

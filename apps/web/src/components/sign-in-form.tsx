@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter, Link } from "waku";
 import { authClient, useInvalidateSession } from "../lib/auth-client";
-import type { ApiError } from "../lib/api";
+import type { ApiError } from "../lib/client";
 import { Button } from "@/components/ui/button";
 
 export function SignInForm() {

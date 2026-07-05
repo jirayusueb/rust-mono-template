@@ -31,6 +31,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tower_governor = "0.8"
 dotenvy = "0.15"
+ts-rs = { version = "12", features = ["chrono-impl"] }
 
 [dev-dependencies]
 rstest = "0.25"

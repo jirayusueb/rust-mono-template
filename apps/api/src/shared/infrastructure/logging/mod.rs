@@ -14,8 +14,7 @@ pub fn init() {
         .map(|v| v == "development")
         .unwrap_or(true);
 
-    let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
     let subscriber = tracing_subscriber::fmt().with_env_filter(filter);
 

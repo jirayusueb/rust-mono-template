@@ -1,14 +1,14 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { apiGet, type Health } from "@/lib/api";
+import { client } from "@/lib/client";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 
 export function HealthCheck() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["health"],
-    queryFn: () => apiGet<Health>("/health"),
+    queryFn: () => client.health.check(),
     refetchInterval: 10_000,
   });
 

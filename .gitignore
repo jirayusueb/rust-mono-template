@@ -11,6 +11,9 @@ bun-debug*.log
 .env.*
 !.env.example
 
+# Generated TypeScript contract (ts-rs)
+apps/web/src/lib/contract.ts
+
 # OS / Editor
 .DS_Store
 .idea/
