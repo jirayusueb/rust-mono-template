@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "strict": true,
+    "strictNullChecks": true,
     "target": "esnext",
     "noEmit": true,
     "isolatedModules": true,
@@ -12,9 +13,9 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
-  }
+  },
+  "include": ["src"]
 }
