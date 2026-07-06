@@ -11,13 +11,18 @@ bun-debug*.log
 .env.*
 !.env.example
 
-# Generated TypeScript contract (ts-rs)
+# Generated TypeScript contract (ts-rs + utoipa typegen)
+apps/web/src/lib/dto.ts
 apps/web/src/lib/contract.ts
+apps/web/src/routeTree.gen.ts
 
 # OS / Editor
 .DS_Store
 .idea/
 .vscode/
+.cursor/
+.claude/
+.codex/
 *.swp
 
 # Local planning / AI-context notes (not part of the template)
