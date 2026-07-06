@@ -35,6 +35,7 @@ impl Session {
     }
 
     /// Factory for an EXISTING session (from trusted DB data). Bypasses validation.
+    #[allow(clippy::too_many_arguments)]
     pub fn restore(
         id: String,
         token: String,

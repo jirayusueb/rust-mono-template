@@ -3,8 +3,8 @@ use validator::Validate;
 
 use crate::features::todo::domain::Status;
 
-#[derive(Debug, Deserialize, Validate, ts_rs::TS)]
-#[ts(export, export_to = "../../web/src/lib/contract.ts")]
+#[derive(Debug, Deserialize, Validate, ts_rs::TS, utoipa::ToSchema)]
+#[ts(export, export_to = "../../web/src/lib/dto.ts")]
 pub struct UpdateTodoRequest {
     #[validate(length(min = 1, max = 200))]
     #[ts(optional)]

@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
 use anyhow::Context;
-use axum::{routing::get, Json, Router};
+use axum::{routing::get, Router};
 use sea_orm::{ConnectOptions, Database};
 use sea_orm_migration::MigratorTrait;
-use serde::Serialize;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 
@@ -20,12 +19,8 @@ use api::shared::infrastructure::config::Config;
 use api::shared::infrastructure::database::unit_of_work::SeaOrmUnitOfWork;
 use api::shared::infrastructure::logging;
 use api::shared::infrastructure::utils::argon2_hasher::Argon2PasswordHasher;
+use api::shared::presentation::health::health;
 use api::shared::presentation::middleware::request_id;
-
-#[derive(Serialize)]
-struct Health {
-    status: &'static str,
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -62,10 +57,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let app = Router::new()
-        .route(
-            "/api/health",
-            get(|| async { Json(Health { status: "ok" }) }),
-        )
+        .route("/api/health", get(health))
         .nest("/api", todo_routes().merge(auth_routes()))
         .layer(TraceLayer::new_for_http())
         .layer(axum::middleware::from_fn(request_id))

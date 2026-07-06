@@ -1,6 +1,7 @@
+use std::collections::HashMap;
 use std::str::FromStr;
 
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::routing::get;
 use axum::{Json, Router};
@@ -31,6 +32,14 @@ pub fn todo_routes() -> Router<AppState> {
         )
 }
 
+#[utoipa::path(
+    post,
+    path = "/todos",
+    tag = "todos",
+    operation_id = "create",
+    request_body = CreateTodoRequest,
+    responses((status = 201, body = CreateTodoResponse, description = "todo created")),
+)]
 async fn create_todo(
     AuthUser(auth, _): AuthUser,
     State(state): State<AppState>,
@@ -47,13 +56,28 @@ async fn create_todo(
     ))
 }
 
+#[utoipa::path(
+    get,
+    path = "/todos",
+    tag = "todos",
+    operation_id = "list",
+    responses((status = 200, body = Vec<TodoResponse>, description = "user's todos")),
+)]
 async fn list_todos(
     AuthUser(auth, _): AuthUser,
     State(state): State<AppState>,
+    Query(params): Query<HashMap<String, String>>,
 ) -> Result<Json<Vec<TodoResponse>>, AppError> {
+    let query = params
+        .get("q")
+        .filter(|s| !s.is_empty())
+        .map(|s| s[..s.len().min(200)].to_string());
     let handler = ListTodosHandler::new(state.todo_repo.clone());
     let output = handler
-        .handle(ListTodosInput { user_id: auth.id })
+        .handle(ListTodosInput {
+            user_id: auth.id,
+            query,
+        })
         .await?;
     Ok(Json(
         output
@@ -64,6 +88,14 @@ async fn list_todos(
     ))
 }
 
+#[utoipa::path(
+    get,
+    path = "/todos/{id}",
+    tag = "todos",
+    operation_id = "get",
+    params(("id" = String, Path, description = "todo id")),
+    responses((status = 200, body = TodoResponse, description = "todo found")),
+)]
 async fn get_todo(
     AuthUser(auth, _): AuthUser,
     State(state): State<AppState>,
@@ -80,6 +112,15 @@ async fn get_todo(
     Ok(Json(TodoMapper::from_get_output(output)))
 }
 
+#[utoipa::path(
+    patch,
+    path = "/todos/{id}",
+    tag = "todos",
+    operation_id = "update",
+    params(("id" = String, Path, description = "todo id")),
+    request_body = UpdateTodoRequest,
+    responses((status = 204, description = "updated")),
+)]
 async fn update_todo(
     AuthUser(auth, _): AuthUser,
     State(state): State<AppState>,
@@ -95,6 +136,14 @@ async fn update_todo(
     Ok(StatusCode::NO_CONTENT)
 }
 
+#[utoipa::path(
+    delete,
+    path = "/todos/{id}",
+    tag = "todos",
+    operation_id = "remove",
+    params(("id" = String, Path, description = "todo id")),
+    responses((status = 204, description = "deleted")),
+)]
 async fn delete_todo(
     AuthUser(auth, _): AuthUser,
     State(state): State<AppState>,

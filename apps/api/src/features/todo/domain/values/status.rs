@@ -2,9 +2,11 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ts_rs::TS, utoipa::ToSchema,
+)]
 #[serde(rename_all = "lowercase")]
-#[ts(export, export_to = "../../web/src/lib/contract.ts")]
+#[ts(export, export_to = "../../web/src/lib/dto.ts")]
 pub enum Status {
     Pending,
     Completed,

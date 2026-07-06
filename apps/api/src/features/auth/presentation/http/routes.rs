@@ -45,6 +45,14 @@ pub fn auth_routes() -> Router<AppState> {
         )
 }
 
+#[utoipa::path(
+    post,
+    path = "/auth/sign-up",
+    tag = "auth",
+    operation_id = "signUp",
+    request_body = SignUpRequest,
+    responses((status = 201, body = UserResponse, description = "user created")),
+)]
 async fn sign_up(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -64,6 +72,14 @@ async fn sign_up(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/auth/sign-in",
+    tag = "auth",
+    operation_id = "signIn",
+    request_body = SignInRequest,
+    responses((status = 200, body = UserResponse, description = "user signed in")),
+)]
 async fn sign_in(
     State(state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<std::net::SocketAddr>,
@@ -101,6 +117,13 @@ async fn sign_in(
     ))
 }
 
+#[utoipa::path(
+    post,
+    path = "/auth/sign-out",
+    tag = "auth",
+    operation_id = "signOut",
+    responses((status = 204, description = "signed out")),
+)]
 async fn sign_out(
     State(state): State<AppState>,
     jar: CookieJar,
@@ -119,6 +142,13 @@ async fn sign_out(
     Ok((StatusCode::NO_CONTENT, jar))
 }
 
+#[utoipa::path(
+    get,
+    path = "/auth/session",
+    tag = "auth",
+    operation_id = "session",
+    responses((status = 200, body = Option<SessionResponse>, description = "current session or null")),
+)]
 async fn session(
     State(state): State<AppState>,
     jar: CookieJar,

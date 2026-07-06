@@ -4,11 +4,13 @@ mod m20250701_000001_initial;
 mod m20250701_000002_auth;
 mod m20250701_000004_add_todo_indexes;
 mod m20250704_000001_soft_delete_and_indexes;
+mod m20250704_000002_add_todo_fts;
 
 pub use m20250701_000001_initial::Migration as InitialMigration;
 pub use m20250701_000002_auth::Migration as AuthMigration;
 pub use m20250701_000004_add_todo_indexes::Migration as AddTodoIndexesMigration;
 pub use m20250704_000001_soft_delete_and_indexes::Migration as SoftDeleteAndIndexesMigration;
+pub use m20250704_000002_add_todo_fts::Migration as AddTodoFtsMigration;
 
 pub struct Migrator;
 
@@ -20,6 +22,7 @@ impl MigratorTrait for Migrator {
             Box::new(AuthMigration),
             Box::new(AddTodoIndexesMigration),
             Box::new(SoftDeleteAndIndexesMigration),
+            Box::new(AddTodoFtsMigration),
         ]
     }
 }

@@ -16,7 +16,10 @@ impl ListTodosHandler {
     }
 
     pub async fn handle(&self, cmd: ListTodosInput) -> Result<ListTodosOutput, AppError> {
-        let todos = self.repo.find_all(&cmd.user_id).await?;
+        let todos = match &cmd.query {
+            Some(q) if !q.is_empty() => self.repo.search(&cmd.user_id, q, 100).await?,
+            _ => self.repo.find_all(&cmd.user_id).await?,
+        };
         Ok(ListTodosOutput {
             todos: todos.into_iter().map(GetTodoOutput::from).collect(),
         })
@@ -43,6 +46,7 @@ mod tests {
         let handler = ListTodosHandler::new(Arc::new(mock));
         let cmd = ListTodosInput {
             user_id: UserId::new(),
+            query: None,
         };
 
         let result = handler.handle(cmd).await.unwrap();
@@ -57,6 +61,7 @@ mod tests {
         let handler = ListTodosHandler::new(Arc::new(mock));
         let cmd = ListTodosInput {
             user_id: UserId::new(),
+            query: None,
         };
 
         assert!(handler.handle(cmd).await.unwrap().todos.is_empty());

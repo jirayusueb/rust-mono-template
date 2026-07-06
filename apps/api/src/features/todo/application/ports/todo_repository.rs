@@ -11,5 +11,6 @@ pub trait TodoRepository: Send + Sync {
     async fn save(&self, todo: &Todo) -> Result<(), AppError>;
     async fn find_by_id(&self, id: &TodoId, user_id: &UserId) -> Result<Option<Todo>, AppError>;
     async fn find_all(&self, user_id: &UserId) -> Result<Vec<Todo>, AppError>;
+    async fn search(&self, user_id: &UserId, query: &str, limit: u64) -> Result<Vec<Todo>, AppError>;
     async fn delete(&self, id: &TodoId, user_id: &UserId) -> Result<(), AppError>;
 }
